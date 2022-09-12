@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 # Auto save stuff
-.py~
+*.py~
