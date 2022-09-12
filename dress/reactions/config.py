@@ -1,1 +1,4 @@
-cross_section_path = '/home/jeriks/Utils/pydress/dress/reactions/cross-sections'
+import os
+from dress.config import install_dir
+
+cross_section_path = os.path.join(install_dir,'dress/reactions/cross-sections')
