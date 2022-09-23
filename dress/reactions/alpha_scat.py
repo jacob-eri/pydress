@@ -59,7 +59,7 @@ class AlphaScattering(Reaction):
         sigma_tab['sigma_tot'] = sigma_tot
 
         self.sigma_tab = sigma_tab
-        self.sigma_diff_interp = RectBivariateSpline(E, cos_theta, sigma_diff)
+        self.sigma_diff_interp = RectBivariateSpline(E, cos_theta, sigma_diff, kx=1, ky=1)
 
 
     def _calc_sigma_tot(self, E):
