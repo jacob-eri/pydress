@@ -142,7 +142,19 @@ def invariant_to_momentum(inv, reactant_data, m1, u1):
     sq_term2 = 4*m1**2 * E0**2 * (E0**2 - p0u**2)
     second_term = np.sqrt(sq_term1 - sq_term2)
 
-    p1 = (first_term + second_term) / (2 * (E0**2 - p0u**2))   # magnitude of three-momentum
+    p1_plus = (first_term + second_term) / (2 * (E0**2 - p0u**2))   # magnitude of three-momentum (1st solution)
+    p1_minus = (first_term - second_term) / (2 * (E0**2 - p0u**2))   # magnitude of three-momentum (2nd solution)
+
+    # Check which solution (if any) that is valid
+    valid_plus = p1_plus >= 0.0
+    valid_minus = p1_minus >= 0.0
+
+    p1 = np.repeat(np.nan, len(p1_plus))
+    p1[valid_minus] = p1_minus[valid_minus]
+    p1[valid_plus] = p1_plus[valid_plus]
+
+    if np.any(valid_plus & valid_minus):
+        print('NOTE: two kinematically allowed solutions found. Using the one with highest energy.')
 
     return p1
 
