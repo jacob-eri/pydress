@@ -16,7 +16,7 @@ class PBe9NB9Reaction(Reaction):
         super().__init__('p', 'be9', 'n', 'b9', None)
 
         # Load tabulated cross section (from ENDF)
-        cx_path = os.path.join(cross_section_path,'Be9(p,n)B9-cross-section.txt')
+        cx_path = os.path.join(cross_section_path,'Be9(p,n)B9-cross-section_jsi.txt')
         tab_cross_section = np.loadtxt(cx_path, usecols=[0,1], comments='#')
         
         tab_cross_section[:,0] /= 1000.0                   # convert from eV to keV
