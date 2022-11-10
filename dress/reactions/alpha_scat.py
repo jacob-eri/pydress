@@ -61,12 +61,17 @@ class AlphaScattering(Reaction):
         self.sigma_tab = sigma_tab
         self.sigma_diff_interp = RectBivariateSpline(E, cos_theta, sigma_diff, kx=1, ky=1)
 
+        # Minimum scattering angle
+        self.cos_theta_max = 1.0
+
 
     def _calc_sigma_tot(self, E):
         return np.interp(E, self.sigma_tab['E'], self.sigma_tab['sigma_tot'])
 
     def _calc_sigma_diff(self, E, cos_theta):
-        return self.sigma_diff_interp(E, cos_theta, grid=False)
+        xs = self.sigma_diff_interp(E, cos_theta, grid=False)
+        xs[cos_theta>self.cos_theta_max] = 0.0
+        return xs
 
 
 class DAlphaScattering(AlphaScattering):
