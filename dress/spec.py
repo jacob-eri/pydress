@@ -267,7 +267,7 @@ class SpectrumCalculator:
     def __call__(self, bins=None, bin_width=25.0, normalize=False, which_product=1):
         """
         Compute reactant spectrum. The units of the spectrum depends on the 
-        units of the weights attribute. The 'normalize' keyword
+        units of the 'weights' attribute. The 'normalize' keyword
         can be used to normalize the spectrum to unit sum.
     
         If 'bins' is given it is passed as a keyword argument to np.histogram. 
@@ -277,7 +277,7 @@ class SpectrumCalculator:
         The bin width of the spectrum histogram can be specified with 'bin_width' (keV). 
         (only effective if bins=None).
         
-        EXPERIMENTAL: Additionally, both the 'bins' and the 'bin_width' attributes can be length-2 lists,
+        Additionally, both the 'bins' and the 'bin_width' attributes can be length-2 lists,
         in which case the spectrum is resolved both in energy and cos(theta), where
         theta is the angle between the B-field and the emission direction.
         """        
