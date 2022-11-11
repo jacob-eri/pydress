@@ -3,7 +3,7 @@ within the `dress` framework."""
 
 
 import numpy as np
-
+from scipy.constants import c
 
 
 class VelocityDistribution:
@@ -15,22 +15,22 @@ class VelocityDistribution:
 
     Attributes
     ----------
+    m : float
+        Mass of the particles in the distribution (in keV/c**2)
+
     density : float
         The density (in particles/m**3) of particles in the distribution.
 
-    v_collective : array of shape (3,)
-        Collective velocity (m/s) of all particles in the distribution."""
+    v_collective : array-like with three elements
+        Collective velocity (m/s) of all particles in the distribution.
+        Setting `v_collective=None` means no collective motion."""
 
     
-    def __init__(self, density, v_collective=None):
+    def __init__(self, m, density, v_collective=None):
         
-        self._density = density
+        self.m = m
+        self.density = density
         self._set_collective_velocity(v_collective)
-
-
-    @property
-    def density(self):
-        return self._density
 
 
     def sample(self,n):
@@ -46,24 +46,81 @@ class VelocityDistribution:
         v : array of shape (3,n)
             The sampled velocity vectors (in m/s)."""
 
+        n = int(n)
         v = self._sample(n)
+        
+        if self.v_collective is not None:
+            v = v + self.v_collective[:,None]
+        
         return v
 
     
     def _sample(self,n):
         """Sampling method to be overloaded by subclasses."""
-        pass
+        return np.zeros(3,n)
 
     
     def _set_collective_velocity(self, v):
         
         if v is None:
-            self.v_collective = 0.0
+            self.v_collective = None
             return
 
         v = np.atleast_1d(v)
         
         if v.shape != (3,):
-            raise ValueError('Collective velocity must be an array with three components (or None)')
+            raise ValueError('Collective velocity must be array-like with three components (or None)')
         
         self.v_collective = v
+
+
+
+class MaxwellianDistribution(VelocityDistribution):
+    """A class representing a Maxwellian velocity distribution.
+
+    Attributes
+    ----------    
+    T : float
+        Temperature (in keV)
+
+    (for the rest of the attributes see docstring for the 
+    `VelocityDistribution` class)"""
+
+    
+    def __init__(self, m, T, density, v_collective=None):
+
+        super().__init__(m, density, v_collective=v_collective)
+        self.T = T
+
+        self._spread = np.sqrt(self.T/self.m)*c   # standard deviation of the distribution (m/s)
+
+
+    def _sample(self,n):
+        v = np.random.normal(loc=0.0, scale=self._spread, size=(3,n))        
+        return v
+        
+
+class MonoEnergeticDistribution(VelocityDistribution):
+    """A class representing a mono-energetic velocity distribution.
+
+    Attributes
+    ----------
+    E : float
+        Kinetic energy of the particles (in keV)
+
+    pitch_range : array-like with 2 elements
+        Pitch values (v_parallel/v) of the particles are taken to be uniformly 
+        distributed between the two values in thsi sequence.
+
+    ref_dir : array-like with shape 3 elements
+        Pitch values (v_parallel/v) are given relative to this direction.
+
+    (for the rest of the attributes see docstring for the 
+    `VelocityDistribution` class)"""
+
+    def __init__(self, m, E, density, pitch_range=[-1,1], ref_dir=[0,1,0]):
+        
+        super().__init__(m, density, v_collective=None)
+        self.E = E
+        self.pitch_range = pitch_range
+        self.ref_dir = np.array(ref_dir)
