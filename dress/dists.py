@@ -74,6 +74,36 @@ class VelocityDistribution:
         self.v_collective = v
 
 
+class EnergyDistribution(VelocityDistribution):
+    """A velocity distribution characterized mainly by its distribution in energy.
+
+    The speeds are determined from an arbitrary energy distribution and the 
+    direction of the corresponding velocity vectors are taken to be uniformly 
+    distributed in a given pitch range, where 
+
+        pitch = v_parallel/v
+
+    and v_parallel is the component of the velocity relative to a given 
+    reference direction.
+
+    Attributes
+    ----------
+    pitch_range : array-like with 2 elements
+        Pitch values of the particles are taken to be uniformly distributed 
+        between the two values in this sequence.
+
+    ref_dir : array with shape (3,)
+        Pitch values are given relative to this direction.
+    
+    For the rest of the attributes see docstring for the parent class(es)."""
+
+
+    def __init__(self, m, density, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
+
+        super().__init__(self, m, density, v_collective=v_collective)
+        self.pitch_range = pitch_range
+        self.ref_dir = ref_dir
+
 
 class MaxwellianDistribution(VelocityDistribution):
     """A class representing a Maxwellian velocity distribution.
@@ -81,13 +111,19 @@ class MaxwellianDistribution(VelocityDistribution):
     Attributes
     ----------    
     T : float
-        Temperature (in keV)
+        Temperature (in keV).
 
-    (for the rest of the attributes see docstring for the 
-    `VelocityDistribution` class)"""
+    pitch_range : array-like with 2 elements
+        Pitch values (v_parallel/v) of the particles are taken to be uniformly 
+        distributed between the two values in this sequence.
+
+    ref_dir : array-like with 3 elements
+        Pitch values (v_parallel/v) are given relative to this direction.
+
+    For the rest of the attributes see docstring for the parent class(es)."""
 
     
-    def __init__(self, m, T, density, v_collective=None):
+    def __init__(self, m, T, density, v_collective=None, pitch_range=None, ref_dir=None):
 
         super().__init__(m, density, v_collective=v_collective)
         self.T = T
@@ -110,9 +146,9 @@ class MonoEnergeticDistribution(VelocityDistribution):
 
     pitch_range : array-like with 2 elements
         Pitch values (v_parallel/v) of the particles are taken to be uniformly 
-        distributed between the two values in thsi sequence.
+        distributed between the two values in this sequence.
 
-    ref_dir : array-like with shape 3 elements
+    ref_dir : array-like with 3 elements
         Pitch values (v_parallel/v) are given relative to this direction.
 
     (for the rest of the attributes see docstring for the 

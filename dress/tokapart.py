@@ -102,9 +102,7 @@ def get_basis_vectors(B):
 
 
 def sample_gyro_angle(N):
-    """
-    Sample 'N' random gyro angles in the interval [0,2*pi).
-    """
+    """Sample 'N' random gyro angles in the interval [0,2*pi)."""
 
     return 2*np.pi*np.random.rand(N)
 

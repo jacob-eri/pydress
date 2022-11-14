@@ -90,8 +90,9 @@ def sample_acc_rej(f, lims, fmax, n_samples, quiet=True):
     return s
 
 def sample_sphere(n_samples):
-    """ Pick Cartesian coordinates of points that are uniformly distributed over the surface
-    of a unit sphere. Output has the shape (3, n_samples). """
+    """Sample points that are uniformly distributed over the surface
+    of a unit sphere. Output points are given in a rectangular coordinate 
+    system and is given as an array with shape (3, n_samples). """
 
     # Uniformly sample cosine of polar angle
     u = np.random.uniform(-1, 1, size=n_samples)
@@ -99,7 +100,7 @@ def sample_sphere(n_samples):
     # Uniformly sample the azimuthal angle
     theta = np.random.uniform(0, 2*np.pi, size=n_samples)
 
-    # Cartesian coordinates
+    # Coordinates in a rectangular system
     x = np.sqrt(1-u**2) * np.cos(theta)
     y = np.sqrt(1-u**2) * np.sin(theta)
     z = u
