@@ -20,8 +20,8 @@ class VelocityDistribution:
 
     Attributes
     ----------
-    m : float
-        Mass of the particles in the distribution (in keV/c**2)
+    particle : instance of dress.particles.Particle
+        The particle that the distribution represent
 
     density : float
         The density (in particles/m**3) of particles in the distribution.
@@ -31,9 +31,9 @@ class VelocityDistribution:
         Setting `v_collective=None` means no collective motion."""
 
     
-    def __init__(self, m, density, v_collective=None):
+    def __init__(self, particle, density, v_collective=None):
         
-        self.m = m
+        self.particle = particle
         self.density = density
         self.v_collective = v_collective
 
@@ -170,7 +170,7 @@ class EnergyDistribution(VelocityDistribution):
         """Calculate velocity corresponding to given values of energy (keV) and pitch."""
 
         # Velocity components parallel and perpendicular to the reference direction
-        v = relkin.get_speed(energy, self.m)       # m/s
+        v = relkin.get_speed(energy, self.particle.m)       # m/s
         v_par = v*pitch
         v_perp = v*np.sqrt(1 - pitch**2)
 
@@ -203,7 +203,7 @@ class MaxwellianDistribution(EnergyDistribution):
                          pitch_range=pitch_range, ref_dir=ref_dir)
         
         self.T = T
-        self._spread = np.sqrt(self.T/self.m)*c   # standard deviation of the distribution (m/s)
+        self._spread = np.sqrt(self.T/self.particle.m)*c   # standard deviation of the distribution (m/s)
 
 
     def sample_energy(self, n, **kwargs):
