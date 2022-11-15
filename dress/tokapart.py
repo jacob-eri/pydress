@@ -4,40 +4,7 @@ moving around in a tokamak."""
 import numpy as np
 import scipy.constants as const
 
-
-def get_speed(E, m):
-    """
-    Calculate the speed (in m/s) of a particle with kinetic energy E (keV)
-    and mass 'm' (keV/c**2). Relativistic kinematics is used.
-    """
-
-    E = E + m                              # total energy (keV)
-    v = np.sqrt(1 - (m/E)**2)*const.c      # speed (m/s)
-
-    return v
-
-
-def get_energy(v, m):
-    """
-    Calculate the kinetic energy 'E' (in keV) of a particle with velocity 'v' (m/s)
-    and mass 'm' (keV/c**2).
-
-    'v' can be a length-N array with the values of the speed, or a (3,N) array
-    with the velocity components.
-
-    Relativistic kinematics is used.
-    """
-
-    v = np.atleast_1d(v)
-
-    c = const.c         # speed of light (m/s)
-
-    v = np.linalg.norm(v, ord=2, axis=0)
-    gamma = 1/np.sqrt(1-(v/c)**2)
-
-    E = (gamma-1)*m     # keV
-
-    return E
+from dress.relkin import get_speed, get_energy
 
 
 def get_vpar_vperp(E, p, m):
