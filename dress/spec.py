@@ -8,21 +8,15 @@ from scipy.interpolate import interp1d, RectBivariateSpline
 from dress import relkin
 from dress import relscatt
 from dress import sampler
-from dress import tokapart
+from dress import vec_ops as vec
 
-
-phi_hat = np.array([0,1.0,0]).reshape(3,1)    # toroidal basis vector
-
-
-# Class for holding reactant info and samples
-# ----------------------------------------------
 
 class Reactant:
+    """Class for holding reactant info and samples."""
     
-    def __init__(self, particle, n_samples=0, B_dir=[0,1,0]):
+    def __init__(self, particle, n_samples=1e6):
         
         self.particle = particle
-        self.B_dir = B_dir
 
         # Initialize without MC sample
         self.P = None
@@ -34,14 +28,6 @@ class Reactant:
     @property
     def m(self):
         return self.particle.m
-
-    @property
-    def B_dir(self):
-        return self._B_dir
-
-    @B_dir.setter
-    def B_dir(self, B):
-        self._B_dir = np.array(B, 'd')
 
     # Handling the sample vectors
     @property
@@ -55,101 +41,6 @@ class Reactant:
         else:
             self._v = v_
             self.P = relkin.get_four_momentum(v_, self.m)
-
-    def set_energy_pitch(self, E, p):
-        self.E = E
-        self.pitch = p
-        
-        self.v = tokapart.add_gyration(E, p, self.m, self.B_dir)
-
-
-    # Convenience functions for sampling various distributions
-
-    def sample_maxwellian_dist(self, T, pitch_range=[-1,1], v_rot=0.0):
-        """ Sample reactant four-momenta from a Maxwellian distribution with a given temperature 
-        (with uniform pitch distribution in a given range). Units in keV. 
-
-        A toroidal rotation speed (including sign) can also be supplied (m/s)."""
-
-        m = self.m
-    
-        # The (kinetic) energy is distributed as a chi2 variable with 3 degrees of freedom
-        E = np.random.chisquare(3, size=self.n_samples) * 0.5 * T
-
-        # Sample pitch values
-        pitch = sampler.sample_uniform(pitch_range, self.n_samples)
-
-        # Store results
-        self.set_energy_pitch(E, pitch)
-    
-        # Add rotation
-        if np.any(np.abs(v_rot)) > 0.0:
-            v_rot = v_rot * phi_hat          # toroidal rotation [m/s]
-            self.v = self.v + v_rot
-
-    def sample_mono_dist(self, E0, pitch_range=[-1,1]):
-        """ Sample four-momenta of reactant particles ('a' or 'b') with a mono-energetic
-        distribution (with uniform pitch distribution in a given range).
-        Units in keV. """
-    
-        # Sample energies
-        E = sampler.sample_mono(E0, self.n_samples)
-
-        # Sample pitch values
-        pitch = sampler.sample_uniform(pitch_range, self.n_samples)
-
-        # Store results
-        self.set_energy_pitch(E, pitch)
-
-    def sample_E_dist(self, Ep, fp, pitch_range=[-1,1], quiet=True, method='acc_rej'):
-        """ Sample four-momenta of reactant particles ('a' or 'b') with a tabulated
-        energy distribution fp given at the points Ep (with uniform pitch distribution 
-        in a given range). Units in keV. """
-    
-        if method == 'acc_rej':
-            # Function to sample from
-            f = interp1d(Ep, fp, bounds_error=False, fill_value=0)
-            
-            # Sampling space
-            lims = ([Ep[0]], [Ep[-1]])
-            fmax = fp.max()
-            
-            # Sample energies
-            s = sampler.sample_acc_rej(f, lims, fmax, self.n_samples, quiet=quiet)
-            E = s[:,0]
-            
-        elif method == 'inv_trans':
-            E = sampler.sample_inv_trans(fp, Ep, self.n_samples)
-
-        else:
-            raise ValueError(f'Unknown sampling method: {method}')
-        
-        # Sample pitch values
-        pitch = sampler.sample_uniform(pitch_range, self.n_samples)
-
-        # Store results
-        self.set_energy_pitch(E, pitch)
-
-    def sample_EP_dist(self, Ep, pitch_p, fp, quiet=True):
-        """ Sample four-momenta of reactant particles ('a' or 'b') with a tabulated
-        (E,pitch) distribution fp given at the points (Ep, pitch_p). Units in keV. """
-    
-        # Function to sample from
-        rbs = RectBivariateSpline(Ep, pitch_p, fp)
-
-        def f(x,y): return rbs(x, y, grid=False)
-
-        # Sampling space
-        lims = ([Ep[0], pitch_p[0]], [Ep[-1], pitch_p[-1]])
-        fmax = fp.max()
-
-        # Sample energy and pitch
-        s = sampler.sample_acc_rej(f, lims, fmax, self.n_samples, quiet=quiet)
-        E = s[:,0]
-        pitch = s[:,1]
-
-        # Store results
-        self.set_energy_pitch(E, pitch)
         
 
 # Calculation of spectrum from sampled four-momenta.
@@ -162,12 +53,12 @@ class SpectrumCalculator:
     (if None, each event gets a random direction).
     """
 
-    def __init__(self, reaction, B_dir=[0,1,0], n_samples=1e6):
+    def __init__(self, reaction, n_samples=1e6, ref_dir=None):
 
-        self._B_dir = np.array(B_dir, 'd')
         self._n_samples = int(n_samples)
         self.reaction = reaction
         self.weights = None
+        self.ref_dir = ref_dir
 
         # 4*pi emission by default
         self.u = None
@@ -196,7 +87,7 @@ class SpectrumCalculator:
 
     @reactant_a.setter
     def reactant_a(self, particle):
-        self._reactant_a = Reactant(particle, n_samples=self.n_samples, B_dir=self.B_dir)
+        self._reactant_a = Reactant(particle, n_samples=self.n_samples)
 
     @property
     def reactant_b(self):
@@ -204,7 +95,7 @@ class SpectrumCalculator:
 
     @reactant_b.setter
     def reactant_b(self, particle):
-        self._reactant_b = Reactant(particle, n_samples=self.n_samples, B_dir=self.B_dir)
+        self._reactant_b = Reactant(particle, n_samples=self.n_samples)
 
     @property
     def ma(self):
@@ -228,18 +119,6 @@ class SpectrumCalculator:
             return None
         else:
             return self.product_3.m
-
-    @property
-    def B_dir(self):
-        return self._B_dir
-
-    @B_dir.setter
-    def B_dir(self, B):
-
-        self._B_dir = np.array(B, 'd')
-            
-        self.reactant_a.B_dir = B
-        self.reactant_b.B_dir = B
     
     @property
     def n_samples(self):
@@ -249,9 +128,6 @@ class SpectrumCalculator:
     def n_samples(self, n):
         n = int(n)
         self._n_samples = n
-
-        self.reactant_a.n_samples = n
-        self.reactant_b.n_samples = n
 
     @property
     def weights(self):
@@ -263,6 +139,21 @@ class SpectrumCalculator:
     @weights.setter
     def weights(self, w):
         self._weights = w
+
+    @property
+    def ref_dir(self):
+        return self._ref_dir
+
+    @ref_dir.setter
+    def ref_dir(self, u):
+        
+        if u is None:
+            self._ref_dir = None
+        else:
+            u = vec.make_vector(u)
+            u = vec.normalize(u)
+            self._ref_dir = u
+    
 
     def __call__(self, bins=None, bin_width=25.0, normalize=False, which_product=1):
         """
@@ -375,10 +266,8 @@ class SpectrumCalculator:
         # Bin in 1D or 2D
         if type(bins) == list:
             # Bin in both energy and emission direction
-            A = np.dot(P[1:].T, self.B_dir)
-            p = np.linalg.norm(P[1:], ord=2, axis=0)
-            b = np.linalg.norm(self.B_dir, ord=2, axis=0)
-            A = A / (p*b)      # cosine of emission angles w.r.t. B-field
+            p = vec.normalize(P[1:])          # normalized emission directions
+            A = vec.dot(p, self.ref_dir)      # cosine of emission angles w.r.t. the reference direction
 
             spec = np.histogram2d(E, A, bins=bins, weights=weights)[0]
         else:

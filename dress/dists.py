@@ -105,9 +105,9 @@ class EnergyDistribution(VelocityDistribution):
     For the rest of the attributes see docstring of the parent class(es)."""
 
 
-    def __init__(self, m, density, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, particle, density, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
 
-        super().__init__(m, density, v_collective=v_collective)
+        super().__init__(particle, density, v_collective=v_collective)
         self.pitch_range = pitch_range
         self.ref_dir = ref_dir
 
@@ -197,9 +197,9 @@ class MaxwellianDistribution(EnergyDistribution):
     For the rest of the attributes see docstring of the parent class(es)."""
 
     
-    def __init__(self, T, m, density, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, T, particle, density, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
 
-        super().__init__(m, density, v_collective=v_collective, 
+        super().__init__(particle, density, v_collective=v_collective, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
         
         self.T = T
@@ -225,9 +225,9 @@ class MonoEnergeticDistribution(EnergyDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, E0, m, density, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, E0, particle, density, pitch_range=[-1,1], ref_dir=[0,1,0]):
         
-        super().__init__(m, density, v_collective=None, 
+        super().__init__(particle, density, v_collective=None, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
         
         self.E0 = E0
@@ -255,9 +255,9 @@ class TabulatedEnergyDistribution(EnergyDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, E_axis, energy_dist, m, density, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, E_axis, energy_dist, particle, density, pitch_range=[-1,1], ref_dir=[0,1,0]):
         
-        super().__init__(m, density, v_collective=None, 
+        super().__init__(particle, density, v_collective=None, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
 
         self.E_axis = np.array(E_axis)
