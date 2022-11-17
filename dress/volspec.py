@@ -68,6 +68,6 @@ def calc(vols, spec_calc, bins, integrate=True, **kwargs):
         spectrum histogram. If integrate = False this will be a 2D array with N rows, 
         such that spec[i] is the spectrum from vols[i]."""
 
-    
+    if 
     for vol in vols:
         
