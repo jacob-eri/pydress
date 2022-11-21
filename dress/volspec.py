@@ -42,7 +42,7 @@ class VolumeElement:
         self.dist_b = None
 
 
-def calc(vols, spec_calc, bins, integrate=True, **kwargs):
+def calc_vols(vols, spec_calc, bins, integrate=True, **kwargs):
     """Calculate spectrum from a number of volume elements.
 
     Parameters
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     import dress
-    from dress import dists
+    import dists
 
     # Create spectrum calculator
     dt = dress.reactions.DTNHe4Reaction()
@@ -198,7 +198,7 @@ if __name__ == '__main__':
         vol.dist_b = dists.MaxwellianDistribution(10, scalc.reactant_b, 1e19)
         #vol.dist_b.v_collective = [0,1e6,0]
 
-        vol.ems_dir = None
+        vol.ems_dir = [0,0,1]
         vol.ref_dir = [0,1,0]
         vols.append(vol)
 
@@ -207,4 +207,4 @@ if __name__ == '__main__':
     A_bins = np.linspace(-1,1,25)
     #bins = [E_bins, A_bins]
     bins = E_bins
-    spec = calc(vols, scalc, bins, integrate=False)
+    spec = calc_vols(vols, scalc, bins, integrate=False)

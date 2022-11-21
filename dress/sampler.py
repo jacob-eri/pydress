@@ -57,7 +57,7 @@ def sample_acc_rej(f, lims, fmax, n_samples, quiet=True):
     'fmax' is the maximum number that f can take. """
 
     # Sample points xp and fp in the hypercube bounded by 'lims' and 'fmax', and keep only
-    # the points that fall below f(*xp). Loop until we have collected enought samples.
+    # the points that fall below f(*xp). Loop until we have collected enough samples.
     ndims = len(lims[0])
 
     s = np.zeros((n_samples, ndims))
@@ -153,4 +153,25 @@ def sample_mcmc(F, x0, dx, n_samples):
 
     return chain
 
-        
+def sample_tab(dist, axes, n_samples):
+    """Sample a tabulated probability density function (pdf).
+
+    Parameters
+    ----------
+    dist : array-like of shape (N0, N1, N2, ...)
+        The tabulated probability density function. Does not have to be normalized.
+    axes : list of 1D-arrays
+        The coordinate axes. The number of axes should match the number of dimensions 
+        of `dist`. The length of each axis should match the number of elements along the 
+        corresponding dimension of `dims`, i.e. axes[0].shape = (N0,), 
+        axes[1].shape = (N1,) etc.
+    n_samples : int
+        Number of samples to draw.
+
+    Returns
+    -------
+    sample : array of shape (n_samples, N0, N1, N2, ...)
+        Coordinates of the random samples."""
+
+    pass
+    
