@@ -334,7 +334,7 @@ class TabulatedEnergyDistribution(EnergyDistribution):
         return E
 
 
-class TabulatedEnergyPitchDistribution(VelocityDistribution):
+class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
     """A class representing a velocity distribution where the energy-pitch distribution
     is given by tabulated values of f(E,pitch).
 
@@ -348,12 +348,39 @@ class TabulatedEnergyPitchDistribution(VelocityDistribution):
 
     dist : array of shape (NE,NP)
         The distribution value at the tabulated (energy,pitch)-values. The absolute normalization 
-        of the distribution is not important, but the values f(E,p)*dE*dp should be propoprtional
+        of the distribution is not important, but the values f(E,p)*dE*dp should be proportional
         to the number of particles in the phase space volume dE*dp.
+
+    dE : array of shape (NE,)
+        Width of the energy bins (keV).
+
+    d_pitch : array of shape (NP,)
+        Width of the pitch bins.
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, E_axis, pitch_axis, dist, particle, density, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, E_axis, pitch_axis, dist, particle, density, dE=None, d_pitch=None,
+                 pitch_range=[-1,1], ref_dir=[0,1,0]):
+        """Create tabulated energy-pitch distributions from given data.
+
+        Parameters
+        ----------
+        E_axis : array-like of length NE
+            The energy values (keV) of the tabulated distribution.
+
+        pitch_axis : array-like of length NP
+            The pitch values of the tabulated distribution
+
+        dist : array-like of shape (NE,NP)
+            The distribution value at the tabulated (energy,pitch)-values. The absolute normalization 
+            of the distribution is not important, but the values f(E,p)*dE*dp should be proportional
+            to the number of particles in the phase space volume dE*dp.
+
+        dE : array of shape (NE,)
+            Width of the energy bins (keV). If not given, the width is inferred from `E_axis`.
+
+        d_pitch : array of shape (NP,)
+            Width of the pitch bins. If not given, the width is inferred from `pitch_axis`."""
 
         super().__init__(particle, density, v_collective=None, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
@@ -361,6 +388,9 @@ class TabulatedEnergyPitchDistribution(VelocityDistribution):
         self.E_axis = np.array(E_axis)
         self.pitch_axis = np.array(pitch_axis)
         self.dist = np.array(dist)
+
+        self.dE = dE
+        self.d_pitch = d_pitch
 
 
     def sample_energy_pitch(self, n):

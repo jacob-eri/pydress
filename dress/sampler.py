@@ -114,7 +114,7 @@ def sample_mcmc(F, x0, dx, n_samples):
     """
     Sample F(x) by means of Markov Chain Monte Carlo sampling. 
     'F' should be callable, accepting a vector 'x' as input. 
-    'x0' is the startin point for the Markov chain.
+    'x0' is the starting point for the Markov chain.
     'dx' is a suitable step size.
     """
 
@@ -153,25 +153,98 @@ def sample_mcmc(F, x0, dx, n_samples):
 
     return chain
 
-def sample_tab(dist, axes, n_samples):
+def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
     """Sample a tabulated probability density function (pdf).
 
     Parameters
     ----------
     dist : array-like of shape (N0, N1, N2, ...)
         The tabulated probability density function. Does not have to be normalized.
-    axes : list of 1D-arrays
-        The coordinate axes. The number of axes should match the number of dimensions 
-        of `dist`. The length of each axis should match the number of elements along the 
-        corresponding dimension of `dims`, i.e. axes[0].shape = (N0,), 
-        axes[1].shape = (N1,) etc.
+    axes : 1D-arrays
+        The coordinate axes (bin centers). The number of axes should match the number of 
+        dimensions of `dist`. The length of each axis should match the number of elements 
+        along the corresponding dimension of `dims`, i.e. len(axes[0]) = N0, 
+        len(axes[1]) = N1 etc.
     n_samples : int
         Number of samples to draw.
+    dx : list of 1D arrays
+        The widths of the bins represented by the axes. If `None` (default) an attempt is
+        made to reconstruct the bin widths from the axes arrays.
+    var_type : str
+        Can be either 'continuous', in which case the sampled values are distributed uniformly
+        within each bin, of 'discrete', in which case onely the exact tabulated values are sampled.
 
     Returns
     -------
     sample : array of shape (n_samples, N0, N1, N2, ...)
         Coordinates of the random samples."""
 
-    pass
+    n_samples = int(n_samples)
+    dist = np.atleast_1d(dist)
+    axes = [np.atleast_1d(x) for x in axes]
+    axes_mgrid = np.meshgrid(*axes, indexing='ij')
+
+    # Input checks
+    if len(axes) != dist.ndim:
+        raise ValueError(f'Number of axes must match the number of dimenstion in `dist`')
+
+    for i,x in enumerate(axes):
+        if x.shape != (dist.shape[i],):
+            raise ValueError(f'Axis {i} with shape {x.shape} incompatible with dist with shape {dist.shape}')
+
+        if dx is not None:
+            if dx[i].shape != (dist.shape[i],):
+                raise ValueError(f'Bin widths for axis {i} with shape {dx[i].shape} incompatible with dist with shape {dist.shape}')
+
+    # Determine the volume elements
+    if dx is None:
+        dx = _reconstruct_bin_widths(axes)
+        
+    dx = np.meshgrid(*dx, indexing='ij')
+    dv = 1.0
+    for dx_ in dx:
+        dv = dv*dx_
+
+    # Flatten the distribution to a 1D pdf    
+    pdf_1d = dist.flatten()
+    x_1d = [x.flatten() for x in axes_mgrid]
+    dx_1d = [dx_.flatten() for dx_ in dx]
+    dv_1d = dv.flatten()
+
+    # Multiply pdf and dv to get a probability distribution (rather than a density)
+    P = pdf_1d * dv_1d
+    P = P/P.sum()     # normalize to unity
     
+    # Sample from the probability distribution
+    i_sample = np.random.choice(len(P), p=P, size=n_samples)
+    sample = np.array([x[i_sample] for x in x_1d])
+
+    if var_type == 'continuous':
+        # Redistribute each sample uniformly within its respective bin
+        jitter = (-0.5 + np.random.random_sample(sample.shape))     # random variable from [-0.5,0.5]
+        dx_sample = np.array([dx[i_sample] for dx in dx_1d])        # bin width for each sample
+        sample = sample + jitter*dx_sample
+        
+    elif var_type != 'discrete':
+        raise ValueError('`var_type` must be either "continuous" or "discrete"')
+        
+    
+    return sample
+    
+def _reconstruct_bin_widths(bin_centers):
+    """Determine the bin widths for a list of bin_centers.
+
+    For bins with variable bin spacing this is a bit ambigous;
+    here we make the assumption that the bin widths are everywhere
+    equal to the distance between successive bin centers, and that
+    the last bin width is equal to the second last bin width."""
+
+    widths = []
+
+    for i,b in enumerate(bin_centers):
+        w = np.zeros_like(b)
+        w[:-1] = np.diff(b)
+        w[-1] = w[-2]
+        widths.append(w)
+
+    return widths
