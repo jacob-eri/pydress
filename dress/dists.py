@@ -359,8 +359,7 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, E_axis, pitch_axis, dist, particle, density, dE=None, d_pitch=None,
-                 pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, E_axis, pitch_axis, dist, particle, density, dE=None, d_pitch=None, ref_dir=[0,1,0]):
         """Create tabulated energy-pitch distributions from given data.
 
         Parameters
@@ -377,13 +376,14 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
             to the number of particles in the phase space volume dE*dp.
 
         dE : array of shape (NE,)
-            Width of the energy bins (keV). If not given, the width is inferred from `E_axis`.
+            Width of the energy bins (keV). If not given, the width will be inferred from `E_axis`
+            when sampling the distribution.
 
         d_pitch : array of shape (NP,)
-            Width of the pitch bins. If not given, the width is inferred from `pitch_axis`."""
+            Width of the pitch bins. If not given, the width will be inferred from `pitch_axis`
+            when sampling the distribution."""
 
-        super().__init__(particle, density, v_collective=None, 
-                         pitch_range=pitch_range, ref_dir=ref_dir)
+        super().__init__(particle, density, v_collective=None, ref_dir=ref_dir)
         
         self.E_axis = np.array(E_axis)
         self.pitch_axis = np.array(pitch_axis)
@@ -396,5 +396,10 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
     def sample_energy_pitch(self, n):
         """Sample energies (keV) and pitch values from a tabluated distribution."""
         
-        
-        
+        sample = sampler.sample_tab(self.dist, self.E_axis, self.pitch_axis, 
+                                    dx=[self.dE, self.d_pitch], n_samples=n)
+
+        E = sample[0]
+        pitch = sample[1]
+
+        return E, pitch

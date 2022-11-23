@@ -18,35 +18,6 @@ def sample_uniform(val_range, n_samples):
 
     return s
 
-def sample_discrete(vals, n_samples, weights=None):
-    """ Sample values from a 1D discrete distribution. """
-
-    vals = np.atleast_1d(vals)
-
-    if weights is not None:
-        weights = np.atleast_1d(weights)
-        weights = weights / weights.sum()
-
-    s = np.random.choice(vals, p=weights, size=n_samples)
-
-    return s
-
-def sample_inv_trans(f, x, n_samples):
-    """ Randomly sample from a tabulated distribution representing f(x), by
-    means of inverse transform sampling. """
-
-    if any(f<0):
-        raise ValueError('Distribution must be non-negative!')
-
-    # Inverse transform sampling
-    cdf = np.zeros_like(f)
-    cdf[1:] = integrate.cumtrapz(f, x=x)
-
-    r = np.random.rand(n_samples) * cdf[-1]
-    s = np.interp(r, cdf, x)
-
-    return s
-
 def sample_acc_rej(f, lims, fmax, n_samples, quiet=True):
     """ Randomly sample from a distribution f, using the acceptance-rejection method.
     'f' should be callable, taking the dependent variables input. The dimensionality of f
@@ -163,7 +134,7 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
     axes : 1D-arrays
         The coordinate axes (bin centers). The number of axes should match the number of 
         dimensions of `dist`. The length of each axis should match the number of elements 
-        along the corresponding dimension of `dims`, i.e. len(axes[0]) = N0, 
+        along the corresponding dimension of `dist`, i.e. len(axes[0]) = N0, 
         len(axes[1]) = N1 etc.
     n_samples : int
         Number of samples to draw.
@@ -176,7 +147,7 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
 
     Returns
     -------
-    sample : array of shape (n_samples, N0, N1, N2, ...)
+    sample : array of shape (dist.ndim, n_samples)
         Coordinates of the random samples."""
 
     n_samples = int(n_samples)
@@ -184,21 +155,32 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
     axes = [np.atleast_1d(x) for x in axes]
     axes_mgrid = np.meshgrid(*axes, indexing='ij')
 
+    if dx is None:
+        dx = [None]*dist.ndim
+    else:
+        dx = [np.atleast_1d(dx_) for dx_ in dx]
+
     # Input checks
     if len(axes) != dist.ndim:
+        raise ValueError(f'Number of axes must match the number of dimenstion in `dist`')
+
+    if len(dx) != dist.ndim:
         raise ValueError(f'Number of axes must match the number of dimenstion in `dist`')
 
     for i,x in enumerate(axes):
         if x.shape != (dist.shape[i],):
             raise ValueError(f'Axis {i} with shape {x.shape} incompatible with dist with shape {dist.shape}')
 
-        if dx is not None:
+        if dx[i] is not None:
             if dx[i].shape != (dist.shape[i],):
                 raise ValueError(f'Bin widths for axis {i} with shape {dx[i].shape} incompatible with dist with shape {dist.shape}')
-
+        
+    
     # Determine the volume elements
-    if dx is None:
-        dx = _reconstruct_bin_widths(axes)
+    for i,dx_ in enumerate(dx):
+        if dx_ is None:
+            dx_ = _reconstruct_bin_widths(axes[i])
+            dx[i] = dx_
         
     dx = np.meshgrid(*dx, indexing='ij')
     dv = 1.0
@@ -239,12 +221,8 @@ def _reconstruct_bin_widths(bin_centers):
     equal to the distance between successive bin centers, and that
     the last bin width is equal to the second last bin width."""
 
-    widths = []
+    w = np.zeros_like(b)
+    w[:-1] = np.diff(b)
+    w[-1] = w[-2]
 
-    for i,b in enumerate(bin_centers):
-        w = np.zeros_like(b)
-        w[:-1] = np.diff(b)
-        w[-1] = w[-2]
-        widths.append(w)
-
-    return widths
+    return w
