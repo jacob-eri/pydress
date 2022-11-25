@@ -128,7 +128,9 @@ class SpectrumCalculator:
     def n_samples(self, n):
         n = int(n)
         self._n_samples = n
-
+        self.reactant_a.n_samples = n
+        self.reactant_b.n_samples = n
+        
     @property
     def weights(self):
         if self._weights is None:

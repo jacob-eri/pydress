@@ -17,7 +17,7 @@ class Particle:
             self.long_name = 'neutron'
             self.u = masses.mn
 
-        elif name == 'p':
+        elif name in ['p', 'h']:
             self.name = 'p'
             self.long_name = 'proton'
             self.u = masses.mp
@@ -73,3 +73,15 @@ class Particle:
 
     def __repr__(self):
         return 'Particle: {}'.format(self.long_name)
+
+        
+    def __eq__(self, other):
+        
+        if isinstance(other, Particle):
+            if self.long_name == other.long_name:
+                return True
+            else:
+                return False
+
+        else:
+            return False

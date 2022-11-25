@@ -22,6 +22,9 @@ class VolumeElement:
         The emission direction along which to evaluate the spectrum. 
         `None` means to sample emission directions randomly in 4*pi.
 
+    ref_dir : array of shape(3,1)
+        If calculating spectra in 2D, the emission angle is given relative to this direction.
+
     solid_angle : float
         Solid angle (in steradians) in which particles are emitted.
 
@@ -36,13 +39,13 @@ class VolumeElement:
         # Default attributes
         self.pos = None
         self.ems_dir = None
-        self.ref_dir = None
+        self.ref_dir = [0,1,0]
         self.solid_angle = 4*np.pi
         self.dist_a = None
         self.dist_b = None
 
 
-def calc_vols(vols, spec_calc, bins, integrate=True, **kwargs):
+def calc_vols(vols, spec_calc, bins, integrate=True, quiet=True, **kwargs):
     """Calculate spectrum from a number of volume elements.
 
     Parameters
@@ -70,8 +73,12 @@ def calc_vols(vols, spec_calc, bins, integrate=True, **kwargs):
         such that spec[i] is the spectrum from vols[i]."""
 
     spec = _get_empty_spec(vols, bins, integrate)
-    
+    n_vols = len(vols)
+
     for i,vol in enumerate(vols):
+
+        if not quiet:
+            print(f'Progress: {100*i/n_vols:.2f}%', end='\r')
 
         # Spectrum from current volume element (particles/bin/m**3/s)
         s = calc_single_vol(vol, spec_calc, bins=bins, **kwargs)
@@ -106,8 +113,8 @@ def calc_single_vol(vol, spec_calc, **kwargs):
         The calculated spectrum (units are particles/bin/m**3/s)."""
 
     
-    if (spec_calc.reactant_a != vol.dist_a.particle or 
-        spec_calc.reactant_b != vol.dist_b.particle):
+    if (spec_calc.reaction.a != vol.dist_a.particle or 
+        spec_calc.reaction.b != vol.dist_b.particle):
         raise ValueError('Reactants and distribution species do not match')
 
 

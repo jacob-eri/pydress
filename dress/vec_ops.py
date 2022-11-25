@@ -34,7 +34,7 @@ def check_vector(*vecs):
     """Check that the given arrays represent valid 3-vectors."""
 
     for vec in vecs:
-        if type(vec) is not np.ndarray:
+        if not isinstance(vec, np.ndarray):
             raise TypeError('Vector must be a numpy array with shape (3,N)')
 
         if not (vec.ndim == 2 and vec.shape[0] == 3):
@@ -87,6 +87,7 @@ def normalize(v, length=1):
     ----------
     v : array of shape (3,N)
         The vectors to be normalized.
+    
     length : scalar or array of shape (N,)
         The new lengths of the vectors
 
@@ -106,3 +107,29 @@ def normalize(v, length=1):
     u = v * length / old_length
 
     return u
+
+
+def repeat(v, n):
+    """Repeat the vector `v` N times.
+
+    Parameters
+    ----------
+    v : array-like of length 3
+        The vector to be repeated.
+    
+    n : int
+        Number of times to repeat.
+
+    Return
+    ------
+    vn : array of shape (3,n)
+        The vector `v` repeated n times."""
+    
+    v = make_vector(v)
+    
+    if v.shape != (3,1):
+        raise ValueError('`v` cannot be interpreted as a (single) vector')
+
+    vn = np.repeat(v, n, axis=1)
+
+    return vn
