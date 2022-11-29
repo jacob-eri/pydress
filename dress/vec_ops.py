@@ -38,7 +38,7 @@ def check_vector(*vecs):
             raise TypeError('Vector must be a numpy array with shape (3,N)')
 
         if not (vec.ndim == 2 and vec.shape[0] == 3):
-            msg = f'\n{vec}\n cannot does not represent valid array of three-vectors (shape must be (3,N))'
+            msg = f'\n{vec}\n does not represent valid array of three-vectors (shape must be (3,N))'
             raise ValueError(msg)
 
 
