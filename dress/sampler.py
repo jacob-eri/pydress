@@ -138,7 +138,7 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
         len(axes[1]) = N1 etc.
     n_samples : int
         Number of samples to draw.
-    dx : list of 1D arrays
+    dx : list of 1D arrays or None
         The widths of the bins represented by the axes. If `None` (default) an attempt is
         made to reconstruct the bin widths from the axes arrays.
     var_type : str
@@ -157,8 +157,10 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
 
     if dx is None:
         dx = [None]*dist.ndim
-    else:
-        dx = [np.atleast_1d(dx_) for dx_ in dx]
+
+    for i in range(len(dx)):
+        if dx[i] is not None:
+            dx[i] = np.atleast_1d(dx[i])
 
     # Input checks
     if len(axes) != dist.ndim:
@@ -174,7 +176,6 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
         if dx[i] is not None:
             if dx[i].shape != (dist.shape[i],):
                 raise ValueError(f'Bin widths for axis {i} with shape {dx[i].shape} incompatible with dist with shape {dist.shape}')
-        
     
     # Determine the volume elements
     for i,dx_ in enumerate(dx):
@@ -214,15 +215,15 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
     return sample
     
 def _reconstruct_bin_widths(bin_centers):
-    """Determine the bin widths for a list of bin_centers.
+    """Determine the bin widths for a sequence of bin_centers.
 
     For bins with variable bin spacing this is a bit ambigous;
     here we make the assumption that the bin widths are everywhere
     equal to the distance between successive bin centers, and that
     the last bin width is equal to the second last bin width."""
 
-    w = np.zeros_like(b)
-    w[:-1] = np.diff(b)
+    w = np.zeros_like(bin_centers)
+    w[:-1] = np.diff(bin_centers)
     w[-1] = w[-2]
 
     return w
