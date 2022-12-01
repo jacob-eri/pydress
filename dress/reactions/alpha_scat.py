@@ -5,7 +5,7 @@ import os
 import numpy as np
 from scipy.interpolate import RectBivariateSpline
 
-from dress.reactions.config import cross_section_path
+from dress.config import cross_section_dir
 from dress.reactions.particle import Particle
 from dress.reactions.reaction import Reaction
 
@@ -49,7 +49,7 @@ class AlphaScattering(Reaction):
 
         # Load tabulated differential cross section 
         # (same as the one used in ControlRoom)
-        self.cx_path = os.path.join(cross_section_path, cross_section_file)
+        self.cx_path = os.path.join(cross_section_dir, cross_section_file)
         E, cos_theta, sigma_diff, sigma_tot = load_tab_cross_section(self.cx_path)
 
         sigma_tab = {}

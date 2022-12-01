@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from dress.reactions.masses import m4He, m9Be
-from dress.reactions.config import cross_section_path
+from dress.config import cross_section_dir
 from dress.reactions.particle import Particle
 from dress.reactions.reaction import Reaction
 
@@ -16,7 +16,7 @@ class AlphaBe9NC12Reaction(Reaction):
         super().__init__('he4', 'be9', 'n', 'c12', None)
 
         # Load tabulated cross section (from ENDF)
-        cx_path = os.path.join(cross_section_path,'Be9(alpha,n)C12-cross-section.txt')
+        cx_path = os.path.join(cross_section_dir,'Be9(alpha,n)C12-cross-section.txt')
         tab_cross_section = np.loadtxt(cx_path, usecols=[0,1], comments='#')
         
         tab_cross_section[:,0] /= 1000.0                   # convert from eV to keV

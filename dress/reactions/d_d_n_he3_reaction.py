@@ -4,13 +4,13 @@ import numpy as np
 import scipy.interpolate as interp
 from scipy.special import legendre
 
-from dress.reactions.config import cross_section_path
+from dress.config import cross_section_dir
 from dress.reactions.particle import Particle
 from dress.reactions.reaction import Reaction
 
 
 # Load Legendre coefficients for DD differential cross section
-c_endf = np.loadtxt(os.path.join(cross_section_path,'ddn3he_legendre_endf.txt')).T
+c_endf = np.loadtxt(os.path.join(cross_section_dir,'ddn3he_legendre_endf.txt')).T
 
 # Convert from LAB to COM (equal masses) and energies to keV
 c_endf[0,:] = c_endf[0,:]/2000.0

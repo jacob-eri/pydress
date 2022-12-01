@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-from dress.reactions.config import cross_section_path
+from dress.config import cross_section_dir
 from dress.reactions.particle import Particle
 from dress.reactions.reaction import Reaction
 
@@ -15,7 +15,7 @@ class TT2NHe4Reaction(Reaction):
         super().__init__('t', 't', 'n', 'n', 'he4')
 
         # Load tabulated cross section (from ENDF)
-        cx_path = os.path.join(cross_section_path,'T(t,2n)He4-cross-section.txt')
+        cx_path = os.path.join(cross_section_dir,'T(t,2n)He4-cross-section.txt')
         tab_cross_section = np.loadtxt(cx_path, usecols=[0,1], comments='#')
         
         tab_cross_section[:,0] /= 2000.0   # convert from lab to CM, and from eV to keV
