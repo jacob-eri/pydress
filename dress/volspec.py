@@ -80,6 +80,14 @@ def calc_vols(vols, spec_calc, bins, integrate=True, quiet=True, **kwargs):
         if not quiet:
             print(f'Progress: {100*i/n_vols:.2f}%', end='\r')
 
+        na = vol.dist_a.density
+        nb = vol.dist_b.density
+        ΔΩ = vol.solid_angle
+
+        if any([val == 0.0 for val in [na, nb, ΔΩ]]):
+            # No need to calculate anything for this volume
+            continue
+
         # Spectrum from current volume element (particles/bin/m**3/s)
         s = calc_single_vol(vol, spec_calc, bins=bins, **kwargs)
 
@@ -91,7 +99,6 @@ def calc_vols(vols, spec_calc, bins, integrate=True, quiet=True, **kwargs):
             spec[i] = s
 
     return spec
-
         
 
 def calc_single_vol(vol, spec_calc, **kwargs):
@@ -111,12 +118,10 @@ def calc_single_vol(vol, spec_calc, **kwargs):
     -------
     spec : array
         The calculated spectrum (units are particles/bin/m**3/s)."""
-
     
     if (spec_calc.reaction.a != vol.dist_a.particle or 
         spec_calc.reaction.b != vol.dist_b.particle):
         raise ValueError('Reactants and distribution species do not match')
-
 
     # Sample reactant distributions
     spec_calc.reactant_a.v = vol.dist_a.sample(spec_calc.n_samples)
@@ -125,14 +130,14 @@ def calc_single_vol(vol, spec_calc, **kwargs):
     # Calculate spectrum along the requested emission direction
     spec_calc.u = vol.ems_dir
     spec_calc.ref_dir = vol.ref_dir
-    
+
     na = vol.dist_a.density
     nb = vol.dist_b.density
-    δab = get_delta(vol.dist_a, vol.dist_b)
     ΔΩ = vol.solid_angle
+    δab = get_delta(vol.dist_a, vol.dist_b)
 
     n_samples = spec_calc.n_samples
-        
+    
     spec_calc.weights = na*nb*ΔΩ/(1 + δab) * np.ones(n_samples) / n_samples
 
     spec = spec_calc(**kwargs)

@@ -30,7 +30,7 @@ class VelocityDistribution:
         Collective velocity (m/s) of all particles in the distribution.
         Setting `v_collective=None` means no collective motion."""
 
-    def __init__(self, particle, density, v_collective=None):
+    def __init__(self, particle, density=None, v_collective=None):
         """Create velocity distribution.
 
         Parameters
@@ -103,9 +103,9 @@ class VparVperpDistribution(VelocityDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, particle, density, v_collective=None, ref_dir=[0,1,0]):
+    def __init__(self, particle, density=None, v_collective=None, ref_dir=[0,1,0]):
         
-        super().__init__(particle, density, v_collective=v_collective)
+        super().__init__(particle, density=density, v_collective=v_collective)
         self.ref_dir = ref_dir
 
     @property
@@ -162,12 +162,14 @@ class VparVperpDistribution(VelocityDistribution):
         """Calculate velocity corresponding to given values of paralell 
         and perpendicular speeds (m/s)."""
 
+        n_samples = len(v_par)
+
         # Parallel velocity is given with respect to the e2 basis vector of the 
         # local coordinate system.
         v_par = v_par*self.e2
 
         # Azimuthal angle of perpendicular velocity is taken to be uniformly distributed
-        phi = sampler.sample_uniform([0,2*np.pi], len(energy))
+        phi = sampler.sample_uniform([0,2*np.pi], n_samples)
         v_perp = v_perp*(np.cos(phi)*self.e1 - np.sin(phi)*self.e3)
 
         return v_par + v_perp
@@ -194,16 +196,16 @@ class EnergyPitchDistribution(VparVperpDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, particle, density, v_collective=None, ref_dir=[0,1,0]):
+    def __init__(self, particle, density=None, v_collective=None, ref_dir=[0,1,0]):
 
-        super().__init__(particle, density, v_collective=v_collective, ref_dir=ref_dir)
+        super().__init__(particle, density=density, v_collective=v_collective, ref_dir=ref_dir)
         self.ref_dir = ref_dir
 
     def sample_vpar_vperp(self, n):
-        """Sample energy(pitch) and evaluate the corresponding (v_par,v_perp), in m/s."""
+        """Sample (energy,pitch) and evaluate the corresponding (v_par,v_perp), in m/s."""
         E, pitch = self.sample_energy_pitch(n)
 
-        v = relkin.get_speed(energy, self.particle.m)       # m/s
+        v = relkin.get_speed(E, self.particle.m)       # m/s
         v_par = v*pitch
         v_perp = v*np.sqrt(1 - pitch**2)
 
@@ -238,9 +240,9 @@ class EnergyDistribution(EnergyPitchDistribution):
     For the rest of the attributes see docstring of the parent class(es)."""
 
 
-    def __init__(self, particle, density, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, particle, density=None, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
 
-        super().__init__(particle, density, v_collective=v_collective, ref_dir=ref_dir)
+        super().__init__(particle, density=density, v_collective=v_collective, ref_dir=ref_dir)
         self.pitch_range = pitch_range
 
     def sample_energy_pitch(self, n):
@@ -270,9 +272,9 @@ class MaxwellianDistribution(EnergyDistribution):
     For the rest of the attributes see docstring of the parent class(es)."""
 
     
-    def __init__(self, T, particle, density, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, T, particle, density=None, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
 
-        super().__init__(particle, density, v_collective=v_collective, 
+        super().__init__(particle, density=density, v_collective=v_collective, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
         
         self.T = T
@@ -298,9 +300,9 @@ class MonoEnergeticDistribution(EnergyDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, E0, particle, density, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, E0, particle, density=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
         
-        super().__init__(particle, density, v_collective=None, 
+        super().__init__(particle, density=density, v_collective=None, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
         
         self.E0 = E0
@@ -326,9 +328,9 @@ class TabulatedEnergyDistribution(EnergyDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, E_axis, dist, particle, density, pitch_range=[-1,1], ref_dir=[0,1,0]):
+    def __init__(self, E_axis, dist, particle, density=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
         
-        super().__init__(particle, density, v_collective=None, 
+        super().__init__(particle, density=density, v_collective=None, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
 
         self.E_axis = np.array(E_axis)
@@ -370,7 +372,7 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, E_axis, pitch_axis, dist, particle, density, dE=None, d_pitch=None, ref_dir=[0,1,0]):
+    def __init__(self, E_axis, pitch_axis, dist, particle, density=None, dE=None, d_pitch=None, ref_dir=[0,1,0]):
         """Create tabulated energy-pitch distributions from given data.
 
         Parameters
@@ -394,7 +396,7 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
             Width of the pitch bins. If not given, the width will be inferred from `pitch_axis`
             when sampling the distribution."""
 
-        super().__init__(particle, density, v_collective=None, ref_dir=ref_dir)
+        super().__init__(particle, density=density, v_collective=None, ref_dir=ref_dir)
         
         self.E_axis = np.array(E_axis)
         self.pitch_axis = np.array(pitch_axis)
@@ -439,9 +441,9 @@ class TabulatedVparVperpDistribution(VparVperpDistribution):
 
     For the rest of the attributes see docstring of the parent class(es)."""
 
-    def __init__(self, v_par_axis, v_perp_axis, dist, particle, density, dv_par=None, dv_perp=None, ref_dir=[0,1,0]):
+    def __init__(self, v_par_axis, v_perp_axis, dist, particle, density=None, dv_par=None, dv_perp=None, ref_dir=[0,1,0]):
 
-        super().__init__(particle, density, v_collective=None, ref_dir=ref_dir)
+        super().__init__(particle, density=None, v_collective=None, ref_dir=ref_dir)
         
         self.v_par_axis = np.array(v_par_axis)
         self.v_perp_axis = np.array(v_perp_axis)
