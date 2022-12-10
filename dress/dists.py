@@ -49,13 +49,15 @@ class VelocityDistribution:
         self.density = density
         self.v_collective = v_collective
 
-    def sample(self, n):
+    def sample(self, n, index=0):
         """Sample `n` velocity vectors from the distribution.
 
         Parameters
         ----------
         n : int
             The number of samples to draw.
+        index : int
+            The spatial index of the `dist` array to sample from
 
         Returns
         -------
@@ -63,14 +65,14 @@ class VelocityDistribution:
             The sampled velocity vectors (in m/s)."""
 
         n = int(n)
-        v = self._sample(n)
+        v = self._sample(n, index=index)
         
         if self.v_collective is not None:
             v = v + self.v_collective
         
         return v
 
-    def _sample(self, n):
+    def _sample(self, n, index=0):
         """Sampling method, to be overloaded by subclasses."""
         return np.zeros(3,n)
 
@@ -89,6 +91,26 @@ class VelocityDistribution:
         
         self._v_collective = v
 
+    def _set_1d_dist(self, dist):
+        """Set the `dist` attribute from the given input array."""
+
+        dist = np.atleast1d(dist)
+        
+        if dist.ndim == 1:
+            dist = dist[np.newaxis, :]   # dummy spatial axis
+
+        self.dist = dist
+
+    def _set_2d_dist(dist):
+        """Set the `dist` attribute from the given input array."""
+
+        dist = np.atleast2d(dist)
+        
+        if dist.ndim == 2:
+            dist = dist[np.newaxis, :, :]   # dummy spatial axis
+
+        self.dist = dist
+
 
 class VparVperpDistribution(VelocityDistribution):
     """A velocity distribution given in terms of the velocity components parallel and
@@ -98,7 +120,7 @@ class VparVperpDistribution(VelocityDistribution):
 
     Attributes
     ----------
-    ref_dir : array with shape (3,1)
+    ref_dir : array with shape (3,N)
         The parallel and perpendicular speeds are given relative to this direction.
 
     For the rest of the attributes see docstring of the parent class(es)."""
@@ -115,23 +137,20 @@ class VparVperpDistribution(VelocityDistribution):
     @ref_dir.setter
     def ref_dir(self, u):
         u = vec.make_vector(u)
-        if u.shape != (3,1):
-            raise ValueError(f'ref_dir must be a single three-vector.')
-
         self._ref_dir = vec.normalize(u)
 
         # Construct coordinate system where one axis aligns with the reference direction
         self._set_local_basis_vectors()
 
-    def _sample(self, n):
+    def _sample(self, n, index=0):
         """Sample paralell and perpendicular speeds and calculate corresponding velocities."""
         
-        v_par, v_perp = self.sample_vpar_vperp(n)
-        v = self._calc_velocity(v_par, v_perp)
+        v_par, v_perp = self.sample_vpar_vperp(n, index=index)
+        v = self._calc_velocity(v_par, v_perp, index=index)
         
         return v
 
-    def sample_vpar_vperp(self, n):
+    def sample_vpar_vperp(self, n, index=0):
         """Sample paralell and perpendicular speeds (m/s). To be overridden by sub-classes."""
         n = int(n)
         return np.zeros(n), np.zeros(n)
@@ -158,7 +177,7 @@ class VparVperpDistribution(VelocityDistribution):
         self.e2 = e2
         self.e3 = e3
 
-    def _calc_velocity(self, v_par, v_perp):
+    def _calc_velocity(self, v_par, v_perp, index=0):
         """Calculate velocity corresponding to given values of paralell 
         and perpendicular speeds (m/s)."""
 
@@ -166,11 +185,11 @@ class VparVperpDistribution(VelocityDistribution):
 
         # Parallel velocity is given with respect to the e2 basis vector of the 
         # local coordinate system.
-        v_par = v_par*self.e2
+        v_par = v_par*self.e2[:,index]
 
         # Azimuthal angle of perpendicular velocity is taken to be uniformly distributed
         phi = sampler.sample_uniform([0,2*np.pi], n_samples)
-        v_perp = v_perp*(np.cos(phi)*self.e1 - np.sin(phi)*self.e3)
+        v_perp = v_perp*(np.cos(phi)*self.e1[:,index] - np.sin(phi)*self.e3[:,index])
 
         return v_par + v_perp
 
@@ -201,9 +220,9 @@ class EnergyPitchDistribution(VparVperpDistribution):
         super().__init__(particle, density=density, v_collective=v_collective, ref_dir=ref_dir)
         self.ref_dir = ref_dir
 
-    def sample_vpar_vperp(self, n):
+    def sample_vpar_vperp(self, n, index=0):
         """Sample (energy,pitch) and evaluate the corresponding (v_par,v_perp), in m/s."""
-        E, pitch = self.sample_energy_pitch(n)
+        E, pitch = self.sample_energy_pitch(n, index=index)
 
         v = relkin.get_speed(E, self.particle.m)       # m/s
         v_par = v*pitch
@@ -211,7 +230,7 @@ class EnergyPitchDistribution(VparVperpDistribution):
 
         return v_par, v_perp
 
-    def sample_energy_pitch(self, n):
+    def sample_energy_pitch(self, n, index=0):
         """Sample `n` energy and pitch values from the distribution, to be overloaded by the sub-classes."""
         n = int(n)
         return np.zeros(n), np.zeros(n)
@@ -245,13 +264,13 @@ class EnergyDistribution(EnergyPitchDistribution):
         super().__init__(particle, density=density, v_collective=v_collective, ref_dir=ref_dir)
         self.pitch_range = pitch_range
 
-    def sample_energy_pitch(self, n):
-        E = self.sample_energy(n)
-        p = self.sample_pitch(n)
+    def sample_energy_pitch(self, n, index=0):
+        E = self.sample_energy(n, index=index)
+        p = self.sample_pitch(n, index=index)
 
         return E, p
 
-    def sample_energy(self, n):
+    def sample_energy(self, n, index=0):
         """Sample `n` energy values from the distribution, to be overloaded by the sub-classes."""
         n = int(n)
         return np.zeros(n)
@@ -277,15 +296,13 @@ class MaxwellianDistribution(EnergyDistribution):
         super().__init__(particle, density=density, v_collective=v_collective, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
         
-        self.T = T
-        self._spread = np.sqrt(self.T/self.particle.m)*c   # standard deviation of the distribution (m/s)
+        self.T = np.atleast_1d(T)
 
-
-    def sample_energy(self, n):
+    def sample_energy(self, n, index=0):
         """Sample energies (in keV) from the Maxwellian distribution."""
         
         # The (kinetic) energy is distributed as a chi2 variable with 3 degrees of freedom
-        E = np.random.chisquare(3, size=n) * 0.5 * self.T
+        E = np.random.chisquare(3, size=n) * 0.5 * self.T[index]
         
         return E
         
@@ -295,7 +312,7 @@ class MonoEnergeticDistribution(EnergyDistribution):
 
     Attributes
     ----------
-    E0 : float
+    E0 : float or array of length N
         Kinetic energy of the particles (in keV)
 
     For the rest of the attributes see docstring of the parent class(es)."""
@@ -305,11 +322,11 @@ class MonoEnergeticDistribution(EnergyDistribution):
         super().__init__(particle, density=density, v_collective=None, 
                          pitch_range=pitch_range, ref_dir=ref_dir)
         
-        self.E0 = E0
+        self.E0 = np.atleast_1d(E0)
 
-    def sample_energy(self, n):
+    def sample_energy(self, n, index=0):
         """Sample energies (in keV) from the mono-energetic distribution."""
-        return sampler.sample_mono(self.E0, n)
+        return sampler.sample_mono(self.E0[index], n)
 
 
 class TabulatedEnergyDistribution(EnergyDistribution):
@@ -334,13 +351,14 @@ class TabulatedEnergyDistribution(EnergyDistribution):
                          pitch_range=pitch_range, ref_dir=ref_dir)
 
         self.E_axis = np.array(E_axis)
-        self.dist = np.array(energy_dist)
+        self.dist = self._set_1d_array(dist)
+        
     
-    def sample_energy(self, n):
+    def sample_energy(self, n, index=0):
         """Sample energies (in keV) from tabulated energy distribution."""
         
         n = int(n)
-        E = sampler.sample_inv_trans(self.dist, self.E_axis, n)
+        E = sampler.sample_inv_trans(self.dist[index], self.E_axis, n)
 
         return E
 
@@ -400,15 +418,15 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
         
         self.E_axis = np.array(E_axis)
         self.pitch_axis = np.array(pitch_axis)
-        self.dist = np.array(dist)
+        self.dist = self._set_2d_dist(dist)
 
         self.dE = dE
         self.d_pitch = d_pitch
 
-    def sample_energy_pitch(self, n):
+    def sample_energy_pitch(self, n, index=0):
         """Sample energies (keV) and pitch values from the tabluated distribution."""
         
-        sample = sampler.sample_tab(self.dist, self.E_axis, self.pitch_axis, 
+        sample = sampler.sample_tab(self.dist[index], self.E_axis, self.pitch_axis, 
                                     dx=[self.dE, self.d_pitch], n_samples=n)
 
         E = sample[0]
@@ -428,7 +446,7 @@ class TabulatedVparVperpDistribution(VparVperpDistribution):
     v_perp_axis : array of shape (Nvpe,)
         The v_perp values of the tabulated distribution (m/s).
 
-    dist : array of shape (Nvpa,Nvpe)
+    dist : array of shape (Nvpa,Nvpe) or (N,Nvpa,Nvpe)
         The distribution value at the tabulated (v_par,v_perp)-values. The absolute normalization 
         of the distribution is not important, but the values f(v_par,v_perp)*dv_par*dv_perp should be proportional
         to the number of particles in the phase space volume dv_par*dv_perp.
@@ -443,19 +461,19 @@ class TabulatedVparVperpDistribution(VparVperpDistribution):
 
     def __init__(self, v_par_axis, v_perp_axis, dist, particle, density=None, dv_par=None, dv_perp=None, ref_dir=[0,1,0]):
 
-        super().__init__(particle, density=None, v_collective=None, ref_dir=ref_dir)
+        super().__init__(particle, density=density, v_collective=None, ref_dir=ref_dir)
         
         self.v_par_axis = np.array(v_par_axis)
         self.v_perp_axis = np.array(v_perp_axis)
-        self.dist = np.array(dist)
+        self.dist = self._set_2d_dist(dist)
 
         self.dv_par = dv_par
         self.dv_perp = dv_perp
 
-    def sample_vpar_vperp(self, n):
+    def sample_vpar_vperp(self, n, index=0):
         """Sample parallel and perpendicular speeds (m/s) from the tabluated distribution."""
         
-        sample = sampler.sample_tab(self.dist, self.v_par_axis, self.v_perp_axis, 
+        sample = sampler.sample_tab(self.dist[index], self.v_par_axis, self.v_perp_axis, 
                                     dx=[self.dv_par, self.dv_perp], n_samples=n)
 
         v_par = sample[0]

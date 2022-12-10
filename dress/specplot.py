@@ -91,7 +91,7 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     
     spec : spectrum array
         This should be a spectrum of the kind calculated with dress.volspec.calc_vols, 
-        using the `integrate=False`  option.
+        using the `integrate=False` option.
 
     bin_edges : arrays
         Energy bins and (optionally) pitch bins for the product particle.
