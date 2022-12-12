@@ -68,7 +68,8 @@ class VelocityDistribution:
         v = self._sample(n, index=index)
         
         if self.v_collective is not None:
-            v = v + self.v_collective
+            v_coll = vec.make_vector(self.v_collective[:,index])
+            v = v + v_coll
         
         return v
 
@@ -94,17 +95,17 @@ class VelocityDistribution:
     def _set_1d_dist(self, dist):
         """Set the `dist` attribute from the given input array."""
 
-        dist = np.atleast1d(dist)
+        dist = np.atleast_1d(dist)
         
         if dist.ndim == 1:
             dist = dist[np.newaxis, :]   # dummy spatial axis
 
         self.dist = dist
 
-    def _set_2d_dist(dist):
+    def _set_2d_dist(self, dist):
         """Set the `dist` attribute from the given input array."""
 
-        dist = np.atleast2d(dist)
+        dist = np.atleast_2d(dist)
         
         if dist.ndim == 2:
             dist = dist[np.newaxis, :, :]   # dummy spatial axis
@@ -137,6 +138,10 @@ class VparVperpDistribution(VelocityDistribution):
     @ref_dir.setter
     def ref_dir(self, u):
         u = vec.make_vector(u)
+
+        if u.shape[1] != len(self.density):
+            u = vec.repeat(u, len(self.density))
+
         self._ref_dir = vec.normalize(u)
 
         # Construct coordinate system where one axis aligns with the reference direction
@@ -183,13 +188,17 @@ class VparVperpDistribution(VelocityDistribution):
 
         n_samples = len(v_par)
 
+        e1 = vec.make_vector(self.e1[:,index])
+        e2 = vec.make_vector(self.e2[:,index])
+        e3 = vec.make_vector(self.e3[:,index])
+
         # Parallel velocity is given with respect to the e2 basis vector of the 
         # local coordinate system.
-        v_par = v_par*self.e2[:,index]
+        v_par = v_par*e2
 
         # Azimuthal angle of perpendicular velocity is taken to be uniformly distributed
         phi = sampler.sample_uniform([0,2*np.pi], n_samples)
-        v_perp = v_perp*(np.cos(phi)*self.e1[:,index] - np.sin(phi)*self.e3[:,index])
+        v_perp = v_perp*(np.cos(phi)*e1 - np.sin(phi)*e3)
 
         return v_par + v_perp
 
@@ -266,7 +275,7 @@ class EnergyDistribution(EnergyPitchDistribution):
 
     def sample_energy_pitch(self, n, index=0):
         E = self.sample_energy(n, index=index)
-        p = self.sample_pitch(n, index=index)
+        p = self.sample_pitch(n)
 
         return E, p
 
@@ -351,7 +360,7 @@ class TabulatedEnergyDistribution(EnergyDistribution):
                          pitch_range=pitch_range, ref_dir=ref_dir)
 
         self.E_axis = np.array(E_axis)
-        self.dist = self._set_1d_array(dist)
+        self._set_1d_array(dist)
         
     
     def sample_energy(self, n, index=0):
@@ -418,7 +427,7 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
         
         self.E_axis = np.array(E_axis)
         self.pitch_axis = np.array(pitch_axis)
-        self.dist = self._set_2d_dist(dist)
+        self._set_2d_dist(dist)
 
         self.dE = dE
         self.d_pitch = d_pitch
@@ -465,7 +474,7 @@ class TabulatedVparVperpDistribution(VparVperpDistribution):
         
         self.v_par_axis = np.array(v_par_axis)
         self.v_perp_axis = np.array(v_perp_axis)
-        self.dist = self._set_2d_dist(dist)
+        self._set_2d_dist(dist)
 
         self.dv_par = dv_par
         self.dv_perp = dv_perp

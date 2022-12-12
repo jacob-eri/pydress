@@ -47,6 +47,9 @@ def plot_spec(spec, *bin_edges, **kwargs):
         Whether to convert the energy axis according to the value of `E_unit`, under 
         the assumption that the input energy axis is in keV (the default units of dress). 
         Default is True.
+
+    erase : bool
+        Whether to erase existing spectra from the figure. Default is `True`.
     """
 
     # Get keyword arguments
@@ -55,6 +58,7 @@ def plot_spec(spec, *bin_edges, **kwargs):
     spec_label = kwargs.get('spec_label', 'events/bin/s')
     E_unit = kwargs.get('E_unit', 'MeV')
     convert_E = kwargs.get('convert_E', True)
+    erase = kwargs.get('erase', True)
 
     # Convert energy scale, if necessary
     E_bins = bin_edges[0]
@@ -66,14 +70,14 @@ def plot_spec(spec, *bin_edges, **kwargs):
 
     if len(bin_edges) == 1:
         plt.figure('DRESS energy spectrum')
-        plt.clf()
-        plt.step(E_bins[1:], spec, where='post')
+        if erase: plt.clf()
+        plt.step(E_bins[1:], spec, where='pre')
         plt.xlabel(E_label)
         plt.ylabel(spec_label)
         
     if len(bin_edges) == 2:
         plt.figure('DRESS energy-pitch spectrum')
-        plt.clf()
+        if erase: plt.clf()
         A_bins = bin_edges[1]
         plt.pcolor(E_bins, A_bins, spec.T)
         plt.xlabel(E_label)
