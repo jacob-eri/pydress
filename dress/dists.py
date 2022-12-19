@@ -15,16 +15,17 @@ class VelocityDistribution:
     """A class representing the velocity distribution of an ensemble of particles.
 
     In order to use it, a user would typically subclass this class and implement
-    a method called `_sample(self, n)`, which returns `n` velocity samples from
-    the distribution.
+    a method called `_sample(self, n, index=0)`, which returns `n` velocity samples from
+    the distribution at the given spatial index.
 
     Attributes
     ----------
     particle : instance of dress.particles.Particle
         The particle that the distribution represent
 
-    density : float
-        The density (in particles/m**3) of particles in the distribution.
+    density : array
+        The density (in particles/m**3) of particles in the distribution,
+        at each spatial location.
 
     v_collective : array-like with three elements
         Collective velocity (m/s) of all particles in the distribution.
@@ -46,7 +47,7 @@ class VelocityDistribution:
             Setting `v_collective=None` means no collective motion."""
         
         self.particle = particle
-        self.density = density
+        self.density = np.atleast_1d(density)
         self.v_collective = v_collective
 
     def sample(self, n, index=0):
@@ -360,14 +361,13 @@ class TabulatedEnergyDistribution(EnergyDistribution):
                          pitch_range=pitch_range, ref_dir=ref_dir)
 
         self.E_axis = np.array(E_axis)
-        self._set_1d_array(dist)
-        
+        self._set_1d_dist(dist)
     
     def sample_energy(self, n, index=0):
         """Sample energies (in keV) from tabulated energy distribution."""
         
         n = int(n)
-        E = sampler.sample_inv_trans(self.dist[index], self.E_axis, n)
+        E = sampler.sample_tab(self.dist[index], self.E_axis, n_samples=n)
 
         return E
 

@@ -212,6 +212,8 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
         raise ValueError('`var_type` must be either "continuous" or "discrete"')
         
     
+    sample = sample.squeeze()        # remove singleton dimension in case of 1D dist
+
     return sample
     
 def _reconstruct_bin_widths(bin_centers):
