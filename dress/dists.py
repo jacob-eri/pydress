@@ -23,13 +23,13 @@ class VelocityDistribution:
     particle : instance of dress.particles.Particle
         The particle that the distribution represent
 
-    density : array
+    density : array of shape (N,)
         The density (in particles/m**3) of particles in the distribution,
-        at each spatial location.
+        at each of the N spatial locations.
 
-    v_collective : array-like with three elements
-        Collective velocity (m/s) of all particles in the distribution.
-        Setting `v_collective=None` means no collective motion."""
+    v_collective : array with shape (3,N)
+        Collective velocity (m/s) of all particles in the distribution, at each spatial location.
+        `v_collective=None` means no collective motion."""
 
     def __init__(self, particle, density=None, v_collective=None):
         """Create velocity distribution.
@@ -39,12 +39,13 @@ class VelocityDistribution:
         particle : instance of dress.particles.Particle
             The particle that the distribution represent
 
-        density : float
-            The density (in particles/m**3) of particles in the distribution.
+        density : float or array-like
+            The density (in particles/m**3) of particles in the distribution,
+            at each of the N spatial locations.
 
-        v_collective : array-like with three elements
-            Collective velocity (m/s) of all particles in the distribution.
-            Setting `v_collective=None` means no collective motion."""
+        v_collective : array-like with shape (3,N)
+            Collective velocity (m/s) of all particles in the distribution, at each spatial location.
+            `v_collective=None` means no collective motion."""
         
         self.particle = particle
         self.density = np.atleast_1d(density)
@@ -91,6 +92,9 @@ class VelocityDistribution:
 
         v = vec.make_vector(v)
         
+        if v.shape[1] != len(self.density):
+            v = vec.repeat(v, len(self.density))
+
         self._v_collective = v
 
     def _set_1d_dist(self, dist):
