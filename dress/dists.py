@@ -106,6 +106,7 @@ class VelocityDistribution:
             dist = dist[np.newaxis, :]   # dummy spatial axis
 
         self.dist = dist
+        self.n_spatial = len(dist)
 
     def _set_2d_dist(self, dist):
         """Set the `dist` attribute from the given input array."""
@@ -116,7 +117,8 @@ class VelocityDistribution:
             dist = dist[np.newaxis, :, :]   # dummy spatial axis
 
         self.dist = dist
-
+        self.n_spatial = len(dist)
+        
 
 class VparVperpDistribution(VelocityDistribution):
     """A velocity distribution given in terms of the velocity components parallel and

@@ -3,6 +3,7 @@ spectra with the `dress` framework."""
 
 import numpy as np
 
+import dress.vec_ops as vec
 
 class VolumeElements:
     """A class representing a volume elements from which we want to 
@@ -13,7 +14,7 @@ class VolumeElements:
     dV : array
         Volumes of each volume element (m**3)
 
-    pos : array of shape (3,N)
+    pos : tuple of arrays
         Spatial coordinates of each volume element, e.g. (R,Z) or (X,Y,Z).
         Not necessary for the spectrum calculations to work but could be useful
         for the user when plotting etc.
@@ -22,7 +23,7 @@ class VolumeElements:
         The emission direction along which to evaluate the spectrum. 
         `None` means to sample emission directions randomly in 4*pi.
 
-    ref_dir : array of shape(3,N)
+    ref_dir : array of shape (3,N)
         If calculating spectra in 2D, the emission angle is given relative to this direction.
 
     solid_angle : array of shape (N,)
@@ -46,6 +47,87 @@ class VolumeElements:
         self.solid_angle = 4*np.pi
         self.dist_a = None
         self.dist_b = None
+
+    @property
+    def ems_dir(self):
+        return self._ems_dir
+
+    @ems_dir.setter
+    def ems_dir(self, u):      
+
+        if u is None or np.all(u == None):
+            # Isotropic emission from all volume elements
+            self._ems_dir = np.repeat(None, self.nvols)
+
+        else:
+            self._ems_dir = self._prep_vector_attribute(u)
+
+    @property
+    def ref_dir(self):
+        return self._ref_dir
+
+    @ref_dir.setter
+    def ref_dir(self, u):
+        self._ref_dir = self._prep_vector_attribute(u)
+        
+    def _prep_vector_attribute(self, v):
+        """Put vector attribute (such as `ems_dir` and `ref_dir`) into the appropriate formats."""
+        v = vec.make_vector(v)
+            
+        if v.shape[1] == 1:
+            # Same emission direction for all volume elements
+            v = vec.repeat(v, self.nvols)
+
+        if v.shape[1] != self.nvols:
+            raise ValueError('Number vectors and volume elements do not match')
+
+        return v
+
+    @property
+    def solid_angle(self):
+        return self._solid_angle
+
+    @solid_angle.setter
+    def solid_angle(self, omega):
+        self._solid_angle = self._prep_scalar_attribute(omega)
+
+    def _prep_scalar_attribute(self, x):
+        """Put scalar attribute (such as `solid_angle`) into the appropriate format."""
+
+        x = np.atleast_1d(x)
+        
+        if len(x) == 1:
+            # Same value for all volume elements
+            x = np.repeat(x, self.nvols)
+
+        if len(x) != self.nvols:
+            raise ValueError('Number values and volume elements do not match')
+
+        return x
+
+    @property
+    def dist_a(self):
+        return self._dist_a
+
+    @dist_a.setter
+    def dist_a(self, dist):
+        
+        if dist is not None and dist.n_spatial != self.nvols:
+            raise ValueError('Wrong number of spatial positions for `dist_a`')
+
+        self._dist_a = dist
+
+    @property
+    def dist_b(self):
+        return self._dist_b
+
+    @dist_b.setter
+    def dist_b(self, dist):
+        
+        if dist is not None and dist.n_spatial != self.nvols:
+            raise ValueError('Wrong number of spatial positions for `dist_b')
+
+        self._dist_b = dist
 
 
 def calc_vols(vols, spec_calc, bins, integrate=True, quiet=True, **kwargs):
@@ -124,7 +206,7 @@ def calc_single_vol(vols, index, spec_calc, **kwargs):
     spec_calc.reactant_b.v = vols.dist_b.sample(spec_calc.n_samples, index=index)
     
     # Calculate spectrum along the requested emission direction
-    if vols.ems_dir is None:
+    if np.all(vols.ems_dir == None):
         spec_calc.u = None
     else:
         spec_calc.u = vols.ems_dir[:,index]
@@ -140,7 +222,10 @@ def calc_single_vol(vols, index, spec_calc, **kwargs):
     
     spec_calc.weights = na*nb*ΔΩ/(1 + δab) * np.ones(n_samples) / n_samples
 
-    spec = spec_calc(**kwargs)
+    if 0.0 in [na, nb, ΔΩ]:
+        spec = 0.0
+    else:
+        spec = spec_calc(**kwargs)
 
     return spec
 
