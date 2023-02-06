@@ -19,11 +19,11 @@ class VolumeElements:
         Not necessary for the spectrum calculations to work but could be useful
         for the user when plotting etc.
 
-    ems_dir : array of shape (3,N) or None
+    ems_dir : array of shape (N,3) or None
         The emission direction along which to evaluate the spectrum. 
         `None` means to sample emission directions randomly in 4*pi.
 
-    ref_dir : array of shape (3,N)
+    ref_dir : array of shape (N,3)
         If calculating spectra in 2D, the emission angle is given relative to this direction.
 
     solid_angle : array of shape (N,)
@@ -79,7 +79,10 @@ class VolumeElements:
             v = vec.repeat(v, self.nvols)
 
         if v.shape[1] != self.nvols:
-            raise ValueError('Number vectors and volume elements do not match')
+            raise ValueError('Number of vectors and volume elements do not match')
+
+        # Transpose the array so that v[i] is the vector for element i
+        v = v.T
 
         return v
 
@@ -206,12 +209,8 @@ def calc_single_vol(vols, index, spec_calc, **kwargs):
     spec_calc.reactant_b.v = vols.dist_b.sample(spec_calc.n_samples, index=index)
     
     # Calculate spectrum along the requested emission direction
-    if np.all(vols.ems_dir == None):
-        spec_calc.u = None
-    else:
-        spec_calc.u = vols.ems_dir[:,index]
-    
-    spec_calc.ref_dir = vols.ref_dir[:,index]
+    spec_calc.u = vols.ems_dir[index]
+    spec_calc.ref_dir = vols.ref_dir[index]
 
     na = vols.dist_a.density[index]
     nb = vols.dist_b.density[index]
