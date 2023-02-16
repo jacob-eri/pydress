@@ -301,7 +301,7 @@ class MaxwellianDistribution(EnergyDistribution):
 
     Attributes
     ----------    
-    T : float
+    T : float or array of shape (N,)
         Temperature (in keV).
 
     For the rest of the attributes see docstring of the parent class(es)."""
@@ -313,6 +313,7 @@ class MaxwellianDistribution(EnergyDistribution):
                          pitch_range=pitch_range, ref_dir=ref_dir)
         
         self.T = np.atleast_1d(T)
+        self.n_spatial = len(self.T)
 
     def sample_energy(self, n, index=0):
         """Sample energies (in keV) from the Maxwellian distribution."""
