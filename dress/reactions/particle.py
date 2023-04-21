@@ -42,10 +42,25 @@ class Particle:
             self.long_name = 'helium-4'
             self.u = masses.m4He
 
+        elif name in ['6li', 'li6']:
+            self.name = 'li6'
+            self.long_name = 'lithium-6'
+            self.u = masses.m6Li
+
+        elif name in ['8be', 'be8']:
+            self.name = 'be8'
+            self.long_name = 'beryllium-8'
+            self.u = masses.m8Be
+
         elif name in ['9be', 'be9']:
             self.name = 'be9'
             self.long_name = 'beryllium-9'
             self.u = masses.m9Be
+
+        elif name in ['9b', 'b9']:
+            self.name = 'b9'
+            self.long_name = 'boron-9'
+            self.u = masses.m9B
 
         elif name in ['12c', 'c12']:
             self.name = 'c12'
@@ -59,11 +74,6 @@ class Particle:
             
             # 1st excited state according to nndc.bnl.gov
             self.excitation_energy = 4439.8    # keV
-        
-        elif name in ['9b', 'b9']:
-            self.name = 'b9'
-            self.long_name = 'boron-9'
-            self.u = masses.m9B
             
         else:
             raise ValueError(f'Invalid particle name: {name}')

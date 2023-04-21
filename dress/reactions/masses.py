@@ -30,17 +30,28 @@ m3He = m3He - 2*me        # u
 # 4-He mass
 m4He = const['alpha particle mass in u'][0]
 
+# 6-Li mass
+# (from https://www.nndc.bnl.gov/nudat3/. Atomic binding energy neglected)
+m6Li = (6*u_keV + 14086.8804) / u_keV
+m6Li = m6Li - 3*me        # u
+
+# 8-Be mass
+# (from https://www.nndc.bnl.gov/nudat3/. Atomic binding energy neglected)
+m8Be = (8*u_keV + 4941.67) / u_keV
+m8Be = m8Be - 4*me        # u
+
 # 9-Be mass
 # (from https://www.nndc.bnl.gov/nudat3/. Atomic binding energy neglected)
 m9Be = (9*u_keV + 11348.45) / u_keV
 m9Be = m9Be - 4*me        # u
+
+# 9-B mass
+# (https://www.nndc.bnl.gov/nudat3/. Atomic binding energy neglected)
+m9B = (9*u_keV + 12416.5) / u_keV
+m9B = m9B - 5*me          # u
 
 # 12-C mass
 # (from https://www.nndc.bnl.gov/nudat3/. Atomic binding energy neglected)
 m12C = 12*u_keV / u_keV
 m12C = m12C - 6*me        # u
 
-# 9-B mass
-# (https://www.nndc.bnl.gov/nudat3/. Atomic binding energy neglected)
-m9B = (9*u_keV + 12416.5) / u_keV
-m9B = m9B - 5*me          # u

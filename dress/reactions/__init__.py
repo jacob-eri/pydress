@@ -6,3 +6,5 @@ from dress.reactions.alpha_be9_n_c12_reaction import AlphaBe9NC12Reaction
 from dress.reactions.alpha_be9_n_c12e1_reaction import AlphaBe9NC12E1Reaction
 from dress.reactions.alpha_scat import DAlphaScattering, TAlphaScattering
 from dress.reactions.p_be9_n_b9_reaction import PBe9NB9Reaction
+from dress.reactions.p_be9_d_be8_reaction import PBe9DBe8Reaction
+from dress.reactions.p_be9_alpha_li6_reaction import PBe9AlphaLi6Reaction
