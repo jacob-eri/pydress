@@ -192,3 +192,5 @@ if __name__ == '__main__':
     Edist = np.repeat(np.atleast_2d(Edist), NP, axis=0)
     energy_dist = make_dist('energy', particle_name, NP, density, energy_axis=Eaxis,
                             distvals=Edist, pitch_range=[-0.5,0.5])
+
+    

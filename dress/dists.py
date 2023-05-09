@@ -252,6 +252,52 @@ class EnergyPitchDistribution(VparVperpDistribution):
         return np.zeros(n), np.zeros(n)
 
 
+class SpeedDistribution(VparVperpDistribution):
+    """A velocity distribution characterized mainly by its distribution in speed.
+
+    The speeds are determined from an arbitrary speed distribution and the 
+    direction of the corresponding velocity vectors are taken to be uniformly 
+    distributed in a given pitch range, where 
+
+        pitch = v_parallel/v
+
+    and v_parallel is the component of the velocity relative to a given 
+    reference direction.
+
+    Typically, a user would subclass this class and override the `sample_speed` method.
+
+    Attributes
+    ----------
+    pitch_range : array-like with 2 elements
+        Pitch values of the particles are taken to be uniformly distributed 
+        between the two values in this sequence.
+
+    For the rest of the attributes see docstring of the parent class(es)."""
+
+    def __init__(self, particle, density=None, v_collective=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
+
+        super().__init__(particle, density=density, v_collective=v_collective, ref_dir=ref_dir)
+        self.pitch_range = pitch_range
+
+    def sample_vpar_vperp(self, n, index=0):
+        v = self.sample_speed(n, index=index)
+        pitch = self.sample_pitch(n)
+
+        v_par = v*pitch
+        v_perp = v*np.sqrt(1 - pitch**2)
+
+        return v_par, v_perp
+
+    def sample_speed(self, n, index=0):
+        """Sample `n` speed values from the distribution, to be overloaded by the sub-classes."""
+        n = int(n)
+        return np.zeros(n)
+
+    def sample_pitch(self, n):
+        """Sample `n` pitch values uniformly distributed in the range given by self.pitch_range."""
+        return sampler.sample_uniform(self.pitch_range, n)
+
+
 class EnergyDistribution(EnergyPitchDistribution):
     """A velocity distribution characterized mainly by its distribution in energy.
 
@@ -357,7 +403,7 @@ class TabulatedEnergyDistribution(EnergyDistribution):
     
     dist : array of shape (N,)
         The distribution value at the tabulated energies. The absolute normalization 
-        of the distribution is not important, but the values f(E)*dE should be propoprtional
+        of the distribution is not important, but the values f(E)*dE should be proportional
         to the number of particles in the energy interval dE.
 
     For the rest of the attributes see docstring of the parent class(es)."""
@@ -496,3 +542,36 @@ class TabulatedVparVperpDistribution(VparVperpDistribution):
         v_perp = sample[1]
         
         return v_par, v_perp
+
+
+class TabulatedSpeedDistribution(SpeedDistribution):
+    """A class representing a velocity distribution where the speed distribution
+    is given by tabulated values of f vs v.
+
+    Attributes
+    ----------
+    v_axis : array of shape (N,)
+        The speed values (m/s) of the tabulated distribution.
+    
+    dist : array of shape (N,)
+        The distribution value at the tabulated speeds. The absolute normalization 
+        of the distribution is not important, but the values f(v)*dv should be proportional
+        to the number of particles in the energy interval dE.
+
+    For the rest of the attributes see docstring of the parent class(es)."""
+
+    def __init__(self, v_axis, dist, particle, density=None, pitch_range=[-1,1], ref_dir=[0,1,0]):
+        
+        super().__init__(particle, density=density, v_collective=None, 
+                         pitch_range=pitch_range, ref_dir=ref_dir)
+
+        self.v_axis = np.array(v_axis)
+        self._set_1d_dist(dist)
+    
+    def sample_speed(self, n, index=0):
+        """Sample speeds (in m/s) from tabulated speed distribution."""
+        
+        n = int(n)
+        v = sampler.sample_tab(self.dist[index], self.v_axis, n_samples=n)
+
+        return v
