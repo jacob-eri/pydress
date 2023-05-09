@@ -229,11 +229,6 @@ class EnergyPitchDistribution(VparVperpDistribution):
     Typically, a user would sub-class this class and override the 
     `sample_energy_pitch` methods.
 
-    Attributes
-    ----------
-    ref_dir : array with shape (3,1)
-        Pitch values of the particles are given relative to this direction.
-
     For the rest of the attributes see docstring of the parent class(es)."""
 
     def __init__(self, particle, density=None, v_collective=None, ref_dir=[0,1,0]):
