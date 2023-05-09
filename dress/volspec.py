@@ -6,7 +6,7 @@ import numpy as np
 import dress.vec_ops as vec
 
 class VolumeElements:
-    """A class representing a volume elements from which we want to 
+    """A class representing volume elements from which we want to 
     compute reacion product spectra.
 
     Parameters
@@ -24,10 +24,11 @@ class VolumeElements:
         `None` means to sample emission directions randomly in 4*pi.
 
     ref_dir : array of shape (N,3)
-        If calculating spectra in 2D, the emission angle is given relative to this direction.
+        If calculating spectra in 2D (i.e. resolved in both energy and emission direction), 
+        the emission angle is given relative to this direction.
 
     solid_angle : array of shape (N,)
-        Solid angle (in steradians) in which particles are emitted.
+        Solid angle (in steradians) in which particles are emitted, for each volume element.
 
     dist_a, dist_b : instances of dress.dists.VelocityDistribution
         Distribution of the first and second reactants, respectively. Needs to be spatially
@@ -75,7 +76,7 @@ class VolumeElements:
         v = vec.make_vector(v)
             
         if v.shape[1] == 1:
-            # Same emission direction for all volume elements
+            # Same vector for all volume elements
             v = vec.repeat(v, self.nvols)
 
         if v.shape[1] != self.nvols:
@@ -85,14 +86,6 @@ class VolumeElements:
         v = v.T
 
         return v
-
-    @property
-    def solid_angle(self):
-        return self._solid_angle
-
-    @solid_angle.setter
-    def solid_angle(self, omega):
-        self._solid_angle = self._prep_scalar_attribute(omega)
 
     def _prep_scalar_attribute(self, x):
         """Put scalar attribute (such as `solid_angle`) into the appropriate format."""
@@ -107,6 +100,15 @@ class VolumeElements:
             raise ValueError('Number values and volume elements do not match')
 
         return x
+
+    @property
+    def solid_angle(self):
+        return self._solid_angle
+
+    @solid_angle.setter
+    def solid_angle(self, omega):
+        self._solid_angle = self._prep_scalar_attribute(omega)
+
 
     @property
     def dist_a(self):

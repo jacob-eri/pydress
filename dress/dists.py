@@ -14,13 +14,13 @@ from dress import vec_ops as vec
 class VelocityDistribution:
     """A class representing the velocity distribution of an ensemble of particles.
 
-    In order to use it, a user would typically subclass this class and implement
+    In order to use it, one would typically subclass this class and implement
     a method called `_sample(self, n, index=0)`, which returns `n` velocity samples from
     the distribution at the given spatial index.
 
     Attributes
     ----------
-    particle : instance of dress.particles.Particle
+    particle : instance of dress.reactions.Particle
         The particle that the distribution represent
 
     density : array of shape (N,)
@@ -29,7 +29,12 @@ class VelocityDistribution:
 
     v_collective : array with shape (3,N)
         Collective velocity (m/s) of all particles in the distribution, at each spatial location.
-        `v_collective=None` means no collective motion."""
+        `v_collective=None` means no collective motion.
+
+    n_spatial : int
+        The number of spatial points the distribution is given at. This is typically inferred 
+        from the shapes of the distribution data supplied to the constructors of the various 
+        sub-classes below."""
 
     def __init__(self, particle, density=None, v_collective=None):
         """Create velocity distribution.
