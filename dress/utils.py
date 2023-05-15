@@ -12,7 +12,8 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
     Parameters
     ----------
     dist_type : str
-        The type of dist. Should be one of ('maxwellian', 'energy', 'energy-pitch', 'vpar-vperp')
+        The type of dist. Should be one of ('maxwellian', 'energy', 'speed', 
+        'energy-pitch', 'vpar-vperp')
 
     particle_name : str
         Name of the particle (e.g. 'd', 't, 'he4' etc). See `dress.reactions.particle.py`
@@ -62,6 +63,19 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
         Range of (uniformly distributed) pitch values.
         Default is isotropically distributed velocities, i.e. pitch_range = [-1,1].
 
+    
+    Keyword arguments for `dist_type = 'speed'`
+    --------------------------------------------
+    speed_axis : array-like of shape (Nv)
+        Speed axis of the tabulated distribution
+
+    distvals : array of shape (NP,Nv)
+        Tabulated speed distribution at each of the NP spatial points.
+    
+    pitch_range : array-like of shape (2,)
+        Range of (uniformly distributed) pitch values.
+        Default is isotropically distributed velocities, i.e. pitch_range = [-1,1].
+
 
     Keyword arguments for `dist_type = 'energy-pitch'`
     --------------------------------------------------
@@ -89,9 +103,10 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
 
     Returns
     -------
-    dist : dress.VelocityDistribution
+    dist : dress.dists.VelocityDistribution
         The resulting distribution in `dress` format."""
 
+    
     # Massage the input a bit
     dist_type = dist_type.lower()
     particle = Particle(particle_name)
@@ -113,6 +128,7 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
 
     temperature = _get_dist_kwarg(kwargs, 'temperature', (NP,), None)
     energy_axis = _get_dist_kwarg(kwargs, 'energy_axis', None, None)
+    speed_axis = _get_dist_kwarg(kwargs, 'speed_axis', None, None)
     pitch_axis = _get_dist_kwarg(kwargs, 'pitch_axis', None, None)
     vpar_axis = _get_dist_kwarg(kwargs, 'vpar_axis', None, None)
     vperp_axis = _get_dist_kwarg(kwargs, 'vpar_axis', None, None)
@@ -131,6 +147,16 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
         
         dist = dists.TabulatedEnergyDistribution(energy_axis, distvals, particle, density=density,
                                                  pitch_range=pitch_range, ref_dir=ref_dir)
+
+    elif dist_type == 'speed':
+        if speed_axis is None: raise ValueError('Must provide `speed_axis` keyword')
+        Nv = len(speed_axis)
+
+        distvals = _get_dist_kwarg(kwargs, 'distvals', (NP,Nv), None)
+        if distvals is None: raise ValueError('Must provide `distvals` keyword')
+        
+        dist = dists.TabulatedSpeedDistribution(speed_axis, distvals, particle, density=density,
+                                                pitch_range=pitch_range, ref_dir=ref_dir)
 
     elif dist_type == 'energy-pitch':
         if energy_axis is None: raise ValueError('Must provide `energy_axis` keyword')
@@ -158,8 +184,93 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
         dist = dists.TabulatedVparVperpDistribution(vpar_axis, vperp_axis, distvals, particle, 
                                                     density=density, ref_dir=ref_dir)
 
+    else:
+        raise ValueError(f'dist_type = {dist_type} is not a valid option')
+
 
     return dist
+
+
+def make_vols(dV, dist_a, dist_b, solid_angle, emission_dir=None, ref_dir=None, pos=None):
+    """Make volume elements for dress.
+
+    Make a collection of volume elements from which volume intergated or 
+    spatially resolved spectrum calculations - between reactants from the 
+    distributions `dist_a` and `dist_b` - can be performed.
+
+    Parameters
+    ----------
+    dV : array-like of shape (NP,)
+        Element volumes (in m**3).
+
+    dist_a, dist_b : dress.dists.VelocityDistribution
+        Reactant distributions to sample from when computing spectra.
+
+    solid_angle : array-lilke of shape (NP,)
+        Solid angle that the reaction products of interest are emitted into
+        (typically defined by the viewing geometry, collimation etc).
+
+    emission_dir : array-like of shape (NP,3) or None (default)
+        Reaction product emission direction for each volume element. Does not 
+        have to be normalized to unity. emission_dir = None (default) means 
+        isotropic emission in 4*pi.
+
+    ref_dir : array-like of shape (NP,3)
+        Reference direction for the emitted reaction products. Only needs to be
+        provided if the spectrum should be resolved with respect to the emission angle.
+
+    pos : array or tuple of arrays
+        Spatial coordinates of each volume element, e.g. (x, y, z), (R, Z) or similar.
+        Not required for the dress calculations, but can be handy for plotting etc.
+
+    
+    Returns
+    -------
+    vols : dress.volspec.VolumeElement
+        The resulting volume elements."""
+
+    # Check the input
+    NP = dist_a.n_spatial
+
+    if dist_b.n_spatial != NP: 
+        raise ValueError('Number of spatial points in `dist_a` and `dist_b` do not match')
+
+    dV = np.atleast_1d(dV)
+    if dV.shape != (NP,): 
+        raise ValueError('`dV` is incompatible with the number of spatial points in the distributions')
+
+    solid_angle = np.atleast_1d(solid_angle)
+    if solid_angle.shape != (NP,): 
+        raise ValueError('`solid_angle` is incompatible with the number of spatial points in the distributions')
+    
+    if emission_dir is not None:
+        emission_dir = np.atleast_2d(emission_dir)
+        
+        if emission_dir.shape != (NP,3):
+            raise ValueError('Wrong shape of `emission_dir`')
+
+    if ref_dir is None:
+        # User does not intend to resolve spectra with respect to 
+        # emission direction -> ref_dir is arbitrary
+        ref_dir = np.array([0,1,0])
+        ref_dir = np.repeat(ref_dir, NP, axis=0)
+
+    else:
+        ref_dir = np.atleast_2d(ref_dir)
+        
+    if ref_dir.shape != (NP,3):
+        raise ValueError('Wrong shape of `ref_dir`')
+
+    # Create volume elements
+    vols = volspec.VolumeElements(dV)
+    vols.dist_a = dist_a
+    vols.dist_b = dist_b
+    vols.solid_angle = solid_angle
+    vols.ems_dir = emission_dir
+    vols.ref_dir = ref_dir
+    vols.pos = pos
+
+    return vols
 
 
 def _get_dist_kwarg(kwargs, kw, required_shape, default_val):
@@ -172,7 +283,7 @@ def _get_dist_kwarg(kwargs, kw, required_shape, default_val):
             raise ValueError(f'Shape of {kw} is {var.shape}, but it should be {required_shape}')
 
     return var
- 
+
 
 if __name__ == '__main__':
     
@@ -193,4 +304,11 @@ if __name__ == '__main__':
     energy_dist = make_dist('energy', particle_name, NP, density, energy_axis=Eaxis,
                             distvals=Edist, pitch_range=[-0.5,0.5])
 
-    
+    # Make tabulated speed distribution
+    v_axis = np.linspace(0, 1e7, 500)
+    v_dist = np.zeros_like(v_axis)
+    v_dist[:250] = v_axis[:250]
+    v_dist[250:] = v_axis[-1] - v_axis[250:]
+    v_dist = np.repeat(np.atleast_2d(v_dist), NP, axis=0)
+    speed_dist = make_dist('speed', particle_name, NP, density, speed_axis=v_axis,
+                            distvals=v_dist, pitch_range=[-0.5,0.5])
