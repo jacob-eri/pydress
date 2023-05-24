@@ -103,7 +103,7 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
 
     Returns
     -------
-    dist : dress.dists.VelocityDistribution
+    dist : instance of dress.dists.VelocityDistribution
         The resulting distribution in `dress` format."""
 
     
@@ -187,24 +187,31 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
     else:
         raise ValueError(f'dist_type = {dist_type} is not a valid option')
 
-
     return dist
 
 
-def make_vols(dV, dist_a, dist_b, solid_angle, emission_dir=None, ref_dir=None, pos=None):
+def _get_dist_kwarg(kwargs, kw, required_shape, default_val):
+    var = kwargs.get(kw, default_val)
+    
+    if var is not None:
+        var = np.atleast_1d(var)
+
+        if (required_shape is not None) and (var.shape != required_shape):
+            raise ValueError(f'Shape of {kw} is {var.shape}, but it should be {required_shape}')
+
+    return var
+
+
+def make_vols(dV, solid_angle, emission_dir=None, ref_dir=None, pos=None):
     """Make volume elements for dress.
 
-    Make a collection of volume elements from which volume intergated or 
-    spatially resolved spectrum calculations - between reactants from the 
-    distributions `dist_a` and `dist_b` - can be performed.
+    Make a collection of volume elements for which volume intergated or 
+    spatially resolved spectrum calculations can be performed.
 
     Parameters
     ----------
     dV : array-like of shape (NP,)
         Element volumes (in m**3).
-
-    dist_a, dist_b : dress.dists.VelocityDistribution
-        Reactant distributions to sample from when computing spectra.
 
     solid_angle : array-lilke of shape (NP,)
         Solid angle that the reaction products of interest are emitted into
@@ -230,18 +237,15 @@ def make_vols(dV, dist_a, dist_b, solid_angle, emission_dir=None, ref_dir=None, 
         The resulting volume elements."""
 
     # Check the input
-    NP = dist_a.n_spatial
-
-    if dist_b.n_spatial != NP: 
-        raise ValueError('Number of spatial points in `dist_a` and `dist_b` do not match')
-
     dV = np.atleast_1d(dV)
-    if dV.shape != (NP,): 
-        raise ValueError('`dV` is incompatible with the number of spatial points in the distributions')
+    if dV.ndim != 1: 
+        raise ValueError('`dV` should be a 1D array')
+
+    NP = len(dV)
 
     solid_angle = np.atleast_1d(solid_angle)
     if solid_angle.shape != (NP,): 
-        raise ValueError('`solid_angle` is incompatible with the number of spatial points in the distributions')
+        raise ValueError('`solid_angle` should have the same length as `dV`')
     
     if emission_dir is not None:
         emission_dir = np.atleast_2d(emission_dir)
@@ -263,8 +267,6 @@ def make_vols(dV, dist_a, dist_b, solid_angle, emission_dir=None, ref_dir=None, 
 
     # Create volume elements
     vols = volspec.VolumeElements(dV)
-    vols.dist_a = dist_a
-    vols.dist_b = dist_b
     vols.solid_angle = solid_angle
     vols.ems_dir = emission_dir
     vols.ref_dir = ref_dir
@@ -273,16 +275,151 @@ def make_vols(dV, dist_a, dist_b, solid_angle, emission_dir=None, ref_dir=None, 
     return vols
 
 
-def _get_dist_kwarg(kwargs, kw, required_shape, default_val):
-    var = kwargs.get(kw, default_val)
+def calc_vols(vols, dist_a, dist_b, spec_calc, bins, integrate=True, quiet=True, **kwargs):
+    """Calculate spectrum from a number of volume elements and corresponding reactant distributions.
+
+    Parameters
+    ----------
+    vols : instance of dress.volspec.VolumeElements
+        The volume elements to calculate the spectra from.
+
+    dist_a, dist_b : instances of dress.dists.VelocityDistribution
+        The reactant distributions to sample from.
+
+    spec_calc : instance of dress.spec.SpectrumCalculator
+        The spectrum calculator to apply to each volume element.
+
+    bins : array or [array, array]
+        Bin edges in energy and (optionally) in pitch of the emission direction. 
+
+    integrate : bool
+        Whether to calculate the volume integrated spectrum (units of particles/bin/s)
+        or a spatially resolved spectrum (units of particles/bin/m**3/s).
+
+    quiet : bool
+        Whether to print a status message about the progress of the spectrum calculations.
+
+    All additional keyword arguments are passed to `spectrum_calculator.__call__`.
+
+    Returns
+    -------
+    spec : array
+        If integrate = True this will be a 1D array representing the volume integrated 
+        spectrum histogram. If integrate = False this will be a 2D array with N rows, 
+        such that spec[i] is the spectrum from vols[i]."""
+
+    vols.dist_a = dist_a
+    vols.dist_b = dist_b
+
+    spec = _get_empty_spec(vols, bins, integrate)
+
+    for i in range(vols.nvols):
+
+        if not quiet:
+            print(f'Progress: {100*i/vols.nvols:.2f}%', end='\r')
+
+        # Spectrum from current volume element (particles/bin/m**3/s)
+        s = calc_single_vol(vols, i, spec_calc, bins=bins, **kwargs)
+
+        if integrate:
+            # Compute volume integrated spectrum (with units particles/bin/s)
+            spec = spec + s*vols.dV[i]
+        else:
+            # Compute spatially resolved spectrum (with units particles/bin/m**3/s)
+            spec[i] = s
+
+    return spec
+
+
+def calc_single_vol(vols, index, spec_calc, **kwargs):
+    """Calculate spectrum from a given volume element.
+
+    Parameters
+    ----------
+    vols : instance of dress.volspec.VolumeElements
+        The volume elements to calculate the spectrum from.
+
+    index : int
+        The index of the volume element to calculate ths spectrm from.
+
+    spec_calc : instance of dress.spec.SpectrumCalculator
+        The spectrum calculator to apply to the volume element.
+
+    All additional keyword arguments are passed to `spectrum_calculator.__call__`.
+
+    Returns
+    -------
+    spec : array
+        The calculated spectrum (units are particles/bin/m**3/s)."""
     
-    if var is not None:
-        var = np.atleast_1d(var)
+    if (spec_calc.reaction.a != vols.dist_a.particle or 
+        spec_calc.reaction.b != vols.dist_b.particle):
+        raise ValueError('Reactants and distribution species do not match')
 
-        if (required_shape is not None) and (var.shape != required_shape):
-            raise ValueError(f'Shape of {kw} is {var.shape}, but it should be {required_shape}')
+    # Sample reactant distributions
+    spec_calc.reactant_a.v = vols.dist_a.sample(spec_calc.n_samples, index=index)
+    spec_calc.reactant_b.v = vols.dist_b.sample(spec_calc.n_samples, index=index)
+    
+    # Calculate spectrum along the requested emission direction
+    spec_calc.u = vols.ems_dir[index]
+    spec_calc.ref_dir = vols.ref_dir[index]
 
-    return var
+    na = vols.dist_a.density[index]
+    nb = vols.dist_b.density[index]
+    ΔΩ = vols.solid_angle[index]
+    δab = get_delta(vols.dist_a, vols.dist_b)
+
+    n_samples = spec_calc.n_samples
+    
+    spec_calc.weights = na*nb*ΔΩ/(1 + δab) * np.ones(n_samples) / n_samples
+
+    if 0.0 in [na, nb, ΔΩ]:
+        spec = 0.0
+    else:
+        spec = spec_calc(**kwargs)
+
+    return spec
+
+
+def _get_empty_spec(vols, bins, integrate):
+    """Create empty spectrum array of the appropriate size."""
+    
+    # Make `bins` into 1-element lists, if necessary
+    if type(bins) is not list:
+        bins = [bins]
+
+    # Check if we should have spatial resolution or not
+    if integrate:
+        nvols = 1
+    else:
+        nvols = vols.nvols
+    
+    # Number of energy bins
+    nE = len(bins[0]) - 1
+    
+    # Check if spectrum should be resolved in emission direction as well
+    if len(bins) == 2:
+        nA = len(bins[1]) - 1
+    else:
+        nA = 1
+    
+    # Create empty spectrum array of correct shape
+    spec = np.zeros((nvols,nE,nA))
+    
+    # Remove unecessary dimensions
+    spec = np.squeeze(spec)
+
+    return spec
+
+
+def get_delta(dist_a, dist_b):
+    
+    if dist_a == dist_b:
+        delta = 1
+    else:
+        delta = 0
+
+    return delta
 
 
 if __name__ == '__main__':
