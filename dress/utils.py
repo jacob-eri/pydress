@@ -256,7 +256,7 @@ def make_vols(dV, solid_angle, emission_dir=None, ref_dir=None, pos=None):
     if ref_dir is None:
         # User does not intend to resolve spectra with respect to 
         # emission direction -> ref_dir is arbitrary
-        ref_dir = np.array([0,1,0])
+        ref_dir = np.atleast_2d([0,1,0])
         ref_dir = np.repeat(ref_dir, NP, axis=0)
 
     else:

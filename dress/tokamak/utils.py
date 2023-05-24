@@ -131,4 +131,39 @@ class FluxSurfaceQuantity:
         val = self.eval_from_rho(rho)
 
         return val
-        
+
+
+def get_toroidal_velocity(angular_freq, R, Z, toroidal_unit_vector=[0,1,0]):
+    """Evaluate toroidal velocity at the given (R,Z) points.
+
+    Parameters
+    ----------
+    angular_freq : instance of dress.tokamak.utils.FluxSurfaceQuantity
+        The angular frequency profile (radians/sec).
+
+    R, Z : array-likes of shape (NP,)
+        The positions where the toroidal rotation is to be evaluated.
+
+    toroidal_unit_vector : array-like of shape (3,) of (NP,3)
+        Components of the toroidal unit vector in the reference frame of interest.
+        If 1D array, it is assumed to be the same for all the requested points.
+
+    Returns
+    -------
+    v_tor : array of shape (NP,3)
+        Toroidal velocities at each of the requested points."""
+
+    R, Z = np.atleast_1d(R, Z)
+    angf = angular_freq.eval_from_RZ(R, Z)
+    
+    toroidal_speed = angf*R     # m/s
+    
+    toroidal_unit_vector = np.atleast_2d(toroidal_unit_vector)
+    NP = len(toroidal_speed)
+
+    if toroidal_unit_vector.shape == (1,3):
+        toroidal_unit_vector = np.repeat(toroidal_unit_vector, NP, axis=0)
+
+    v_tor = toroidal_speed[:,None] * toroidal_unit_vector
+
+    return v_tor
