@@ -49,8 +49,7 @@ class Reactant:
 class SpectrumCalculator:
     """ 
     Calculate product spectrum from reactions between particles with
-    four-momenta 'Pa' and 'Pb'. 'u' is the product emission direction 
-    (if None, each event gets a random direction).
+    four-momenta 'Pa' and 'Pb'.
     """
 
     def __init__(self, reaction, n_samples=1e6, ref_dir=None):

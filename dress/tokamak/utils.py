@@ -45,7 +45,7 @@ class FluxSurfaceMap:
             raise ValueError('Input data must have the same length')
 
         self.Rtab = R
-        self.Zab = Z
+        self.Ztab = Z
         self.rho_tab = rho
 
         self.rho_lim = rho_lim

@@ -229,7 +229,6 @@ def make_vols(dV, solid_angle, emission_dir=None, ref_dir=None, pos=None):
     pos : array or tuple of arrays
         Spatial coordinates of each volume element, e.g. (x, y, z), (R, Z) or similar.
         Not required for the dress calculations, but can be handy for plotting etc.
-
     
     Returns
     -------
@@ -253,17 +252,22 @@ def make_vols(dV, solid_angle, emission_dir=None, ref_dir=None, pos=None):
         if emission_dir.shape != (NP,3):
             raise ValueError('Wrong shape of `emission_dir`')
 
+        emission_dir = emission_dir.T    # transpose to get correct shape for dress
+
     if ref_dir is None:
         # User does not intend to resolve spectra with respect to 
         # emission direction -> ref_dir is arbitrary
         ref_dir = np.atleast_2d([0,1,0])
         ref_dir = np.repeat(ref_dir, NP, axis=0)
+        ref_dir = ref_dir
 
     else:
         ref_dir = np.atleast_2d(ref_dir)
         
     if ref_dir.shape != (NP,3):
         raise ValueError('Wrong shape of `ref_dir`')
+
+    ref_dir = ref_dir.T   # transpose to get correct shape for dress
 
     # Create volume elements
     vols = volspec.VolumeElements(dV)
