@@ -40,8 +40,8 @@ def plot_spec(spec, *bin_edges, **kwargs):
     spec_label : str
         Label for the spectrum axis. Default is "spectrum (events/bin/s)".
 
-    legend_label : str
-        Label for the legend. Default is an empty None.
+    label : str
+        Label for the legend. Default is None (no legend will be drawn).
 
     E_unit : str
         Which energy units to use. Default is "MeV".
@@ -59,7 +59,7 @@ def plot_spec(spec, *bin_edges, **kwargs):
     E_label = kwargs.get('E_label', 'E')
     A_label = kwargs.get('A_label', 'cos(θ)')
     spec_label = kwargs.get('spec_label', 'events/bin/s')
-    legend_label = kwargs.get('legend_label', None)
+    label = kwargs.get('label', None)
     E_unit = kwargs.get('E_unit', 'MeV')
     convert_E = kwargs.get('convert_E', True)
     erase = kwargs.get('erase', True)
@@ -75,9 +75,10 @@ def plot_spec(spec, *bin_edges, **kwargs):
     if len(bin_edges) == 1:
         plt.figure('DRESS energy spectrum')
         if erase: plt.clf()
-        plt.step(E_bins[1:], spec, where='pre', label=legend_label)
+        plt.step(E_bins[1:], spec, where='pre', label=label)
         plt.xlabel(E_label)
         plt.ylabel(spec_label)
+        plt.legend()
         
     if len(bin_edges) == 2:
         plt.figure('DRESS energy-pitch spectrum')
