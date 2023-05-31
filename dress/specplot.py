@@ -111,7 +111,7 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     ems_label : str
         Label for the emissivity axis. Default is "events/m³/s"."""
 
-    if len(vols[0].pos) != 2:
+    if len(vols.pos) != 2:
         raise ValueError('Emissivity plot currently only works with 2D profiles')
 
     # Keyword arguments
@@ -120,8 +120,8 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     ems_label = kwargs.get('ems_label', 'events/m³/s')
 
     # Extract data to plot
-    x = np.array([vol.pos[0] for vol in vols])
-    y = np.array([vol.pos[1] for vol in vols])
+    x = np.atleast_1d(vols.pos[0])
+    y = np.atleast_1d(vols.pos[1])
 
     if spec.ndim == 2:
         sum_axis = 1
