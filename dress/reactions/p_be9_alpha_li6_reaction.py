@@ -9,7 +9,7 @@ from dress.reactions.reaction import Reaction
 
 
 class PBe9AlphaLi6Reaction(Reaction):
-    """Class representing the p + Be9 -> alpha + Li7 fusion reaction."""
+    """Class representing the p + Be9 -> alpha + Li6 fusion reaction."""
 
     def __init__(self):
 
