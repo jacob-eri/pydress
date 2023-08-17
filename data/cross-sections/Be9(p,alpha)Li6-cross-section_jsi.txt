@@ -3006,3 +3006,4 @@
  4.49701E+06 1.0949E-01   Lin-Lin
  4.49850E+06 1.0948E-01   Lin-Lin
  4.50000E+06 1.0947E-01   Lin-Lin
+ 1.00000E+07 0.0                     # ad-hoc zero point (J. Eriksson)

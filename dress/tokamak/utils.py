@@ -121,8 +121,7 @@ class FluxSurfaceQuantity:
         self.rho = rho
         self.val = val
 
-        fill_value_rho = flux_surface_map.rho_lim + 1
-        self.eval_from_rho = interp1d(rho, val, kind='linear', fill_value=(0,fill_value_rho))
+        self.eval_from_rho = interp1d(rho, val, kind='linear', fill_value=(val[0],0), bounds_error=False)
         
 
     def eval_from_RZ(self, R, Z):
