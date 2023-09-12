@@ -1,4 +1,4 @@
-"""Tools for plotting spectra calculated with the `dress` framework."""
+"""Tools for plotting spectra and distributions in the `dress` framework."""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -138,3 +138,7 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     plt.colorbar(label=ems_label)
     plt.axis('equal')
     
+
+def plot_dist_point(dist, i_spatial=1, **kwargs):
+    """Plot distribution at given spatial location."""
+    pass
