@@ -219,7 +219,7 @@ def make_vols(dV, solid_angle, emission_dir=None, ref_dir=None, pos=None):
 
     emission_dir : array-like of shape (NP,3) or None (default)
         Reaction product emission direction for each volume element. Does not 
-        have to be normalized to unity. emission_dir = None (default) means 
+        have to be normalized to unit length. emission_dir = None (default) means 
         isotropic emission in 4*pi.
 
     ref_dir : array-like of shape (NP,3)
