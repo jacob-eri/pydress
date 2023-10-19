@@ -37,9 +37,8 @@ class TokaDistData:
 
 
         self.F = dist_data
-        self.density = np.atleast_1d(density_data)
+        self.density = density_data
         self.X = axes
-        self._get_spatial_index = spatial_index_fun
 
 
     @property
@@ -48,7 +47,7 @@ class TokaDistData:
 
     @F.setter
     def F(self, dist_data):
-        dist_data = np.atleast2d(dist_data)
+        dist_data = np.atleast_2d(dist_data)
         
         # Add one last point with only zeros
         dist_shape = list(dist_data.shape)
@@ -60,6 +59,20 @@ class TokaDistData:
         # Set attribute
         self._F = F
 
+    @property
+    def density(self):
+        return self._density
+
+    @density.setter
+    def density(self, n):
+        n = np.atleast_1d(n)
+        
+        # Add one last point with zero density
+        density = np.zeros(len(n)+1)
+        density[:-1] = n
+
+        # Set attribute
+        self._density = density
 
     def _get_spatial_index(self, R, Z):
         """Return the spatial index for the given (R,Z) values."""
@@ -84,7 +97,7 @@ class RhoDistData(TokaDistData):
     """Class for holding distribution data where spatial variations 
     depend on a flux surface label `rho` only."""
 
-    def __init__(self, *args, rho_axis, flux_map):
+    def __init__(self, dist_data, density_data, axes, rho_axis, flux_map):
         """Initialize dist which is a function of rho only.
 
         Parameters
@@ -96,14 +109,14 @@ class RhoDistData(TokaDistData):
         flux_map : dress.tokamak.utils.FluxSurfaceMap
             Mapping between (R,Z) and rho.""" 
         
-        super().__init__(*args)
+        super().__init__(dist_data, density_data, axes)
         self.rho = rho_axis
 
         rho_indices = np.arange(len(rho_axis))
         ind_fun = interp1d(rho_axis, rho_indices, kind='nearest', 
                            bounds_error=False, fill_value=-1)
 
-        self._ind_fun = ind_fun
+        self.ind_fun = ind_fun
         self.flux_map = flux_map
 
 
