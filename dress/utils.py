@@ -359,28 +359,29 @@ def calc_single_vol(vols, index, spec_calc, **kwargs):
     if (spec_calc.reaction.a != vols.dist_a.particle or 
         spec_calc.reaction.b != vols.dist_b.particle):
         raise ValueError('Reactants and distribution species do not match')
-
-    # Sample reactant distributions
-    spec_calc.reactant_a.v = vols.dist_a.sample(spec_calc.n_samples, index=index)
-    spec_calc.reactant_b.v = vols.dist_b.sample(spec_calc.n_samples, index=index)
     
-    # Calculate spectrum along the requested emission direction
-    spec_calc.u = vols.ems_dir[index]
-    spec_calc.ref_dir = vols.ref_dir[index]
-
+    # Check if dist is nonzero
     na = vols.dist_a.density[index]
     nb = vols.dist_b.density[index]
     ΔΩ = vols.solid_angle[index]
     δab = get_delta(vols.dist_a, vols.dist_b)
 
+    if 0.0 in [na, nb, ΔΩ]:
+        return 0.0
+
+    # Calculate spectrum along the requested emission direction
+    spec_calc.u = vols.ems_dir[index]
+    spec_calc.ref_dir = vols.ref_dir[index]
+
     n_samples = spec_calc.n_samples
     
     spec_calc.weights = na*nb*ΔΩ/(1 + δab) * np.ones(n_samples) / n_samples
 
-    if 0.0 in [na, nb, ΔΩ]:
-        spec = 0.0
-    else:
-        spec = spec_calc(**kwargs)
+    # Sample reactant distributions
+    spec_calc.reactant_a.v = vols.dist_a.sample(spec_calc.n_samples, index=index)
+    spec_calc.reactant_b.v = vols.dist_b.sample(spec_calc.n_samples, index=index)
+
+    spec = spec_calc(**kwargs)
 
     return spec
 
