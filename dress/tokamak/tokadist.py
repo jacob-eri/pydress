@@ -17,7 +17,7 @@ class TokaDistData:
     The distribution data at a given spatial point  could be a scalar 
     (e.g. temperature) or an array representing e.g. f(v), f(E,pitch) etc."""
 
-    def __init__(self, dist_data, density_data, axes, spatial_index_fun):
+    def __init__(self, dist_data, density_data, axes):
         """Initialize a `TokaDistData` instance.
 
         Parameters
@@ -33,13 +33,7 @@ class TokaDistData:
         axes : tuple of arrays
             The axis along each dimension (e.g. speed, pitch , energy,...).
             The spatial dimension is handeled separately (by the 
-            `spatial_index_fun` argument) and is NOT included here.
-
-        spatial_index_fun : callable
-            Callable that should have the property that `spatial_index_fun(R,Z)`
-            returns the spatial index(indices) corresponding to the given (R,Z)
-            point(s), where `R` and `Z` can be arrays (of equal length). Points
-            outside the distribution domain should return -1."""
+            `spatial_index_fun` argument) and is NOT included here."""
 
 
         self.F = dist_data
@@ -67,44 +61,54 @@ class TokaDistData:
         self._F = F
 
 
-    def map_dist(self, R, Z):
-        """Return distributions and densities at the given (R,Z) points)."""
+    def _get_spatial_index(self, R, Z):
+        """Return the spatial index for the given (R,Z) values."""
+        pass         # to be over-ridden by subclasses
 
-        i_spatial = self._get_spatial_index(R, Z, **kwargs)
+
+    def map_dist(self, R, Z):
+        """Return distributions and densities at the given (R,Z) points."""
+
+        R, Z = np.atleast_1d(R, Z)
+        i_spatial = self._get_spatial_index(R, Z)
         F = self.F[i_spatial]
         density = self.density[i_spatial]
 
         return F, density
 
         
-# Helper functions for creating the spatial index function
-# --------------------------------------------------------
+# Subclasses for common special cases
+# -----------------------------------
 
-class SpatialIndexFun:
-    """Helper class for storing data for a spatial index function."""
-    
-    def __call__(self, R, Z):
-        R, Z = np.atleast_1d(R, Z)
-        return self.get_spatial_index(R, Z)
+class RhoDistData(TokaDistData):
+    """Class for holding distribution data where spatial variations 
+    depend on a flux surface label `rho` only."""
+
+    def __init__(self, *args, rho_axis, flux_map):
+        """Initialize dist which is a function of rho only.
+
+        Parameters
+        ----------
+
+        rho_axis : array
+            The rho axis used by the distribution.
+
+        flux_map : dress.tokamak.utils.FluxSurfaceMap
+            Mapping between (R,Z) and rho.""" 
+        
+        super().__init__(*args)
+        self.rho = rho_axis
+
+        rho_indices = np.arange(len(rho_axis))
+        ind_fun = interp1d(rho_axis, rho_indices, kind='nearest', 
+                           bounds_error=False, fill_value=-1)
+
+        self._ind_fun = ind_fun
+        self.flux_map = flux_map
 
 
-def indfun_for_rho_dist(rho_axis, flux_map):
-    """Creat a spatial index function for a rho = sqrt(psi_pol) grid.
+    def _get_spatial_index(self, R, Z):
+        rho_RZ = self.flux_map.get_rho(R, Z)
+        ind_RZ = self.ind_fun(rho_RZ)
 
-    Parameters
-    ----------
-
-    rho_axis : array
-        The rho axis used by the distribution.
-
-    flux_map : dress.tokamak.utils.FluxSurfaceMap
-        Mapping between (R,Z) and rho."""
-
-    rho_indices = np.arange(len(rho_axis))
-    ind_fun = interp1d(rho_axis, rho_indices, kind='nearest', 
-                       bounds_error=False, fill_value=-1)
-
-    fun = SpatialIndexFun()
-    fun.flux_map = flux_map
-
-    def 
+        return ind_RZ.astype('int')
