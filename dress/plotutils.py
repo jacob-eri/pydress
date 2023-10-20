@@ -139,6 +139,26 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     plt.axis('equal')
     
 
-def plot_dist_point(dist, i_spatial=1, **kwargs):
-    """Plot distribution at given spatial location."""
+def plot_dist_point(dist, i_spatial=1, n_samples=100_000, plot_type='energy-pitch'):
+    """Plot distribution at a given spatial location.
+
+    The plotting is done by sampling `n_samples` velocities and making a histogram.
+
+    Parameters
+    ----------
+    dist : dress.dists.VelocityDistribution
+        The distribution to plot.
+
+    i_spatial : int
+        The spatial point for which the distribution is to be plotted.
+
+    n_samples : int
+        Number of samples to draw for the histogram.
+
+    plot_type : str
+        How to visualize the distribution. Can be one of 
+            - `energy-pitch`
+            - `vpar-vperp`
+            - `energy`
+            - `speed`"""
     pass
