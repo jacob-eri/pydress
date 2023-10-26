@@ -2,7 +2,9 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.constants as const
 
+from dress import relkin, vec_ops
 
 E_conversion_factors = {}
 E_conversion_factors['keV'] = 1.0
@@ -142,7 +144,9 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
 def plot_dist_point(dist, i_spatial=1, n_samples=100_000, plot_type='energy-pitch'):
     """Plot distribution at a given spatial location.
 
-    The plotting is done by sampling `n_samples` velocities and making a histogram.
+    The plotting is done by sampling `n_samples` velocities and making a histogram,
+    thus generating a plot that exactly represent the distribution as 'seen' by
+    the spectrum calculation routines in `dress`.
 
     Parameters
     ----------
@@ -161,4 +165,52 @@ def plot_dist_point(dist, i_spatial=1, n_samples=100_000, plot_type='energy-pitc
             - `vpar-vperp`
             - `energy`
             - `speed`"""
-    pass
+    
+    # Sample velocities from the distribution
+    vel = dist.sample(n_samples, index=i_spatial)
+
+    # Convert to the appropriate coordinates
+    m = dist.particle.m     # mass i keV/c**2
+
+    if plot_type == 'energy-pitch':
+        E = relkin.get_energy(vel, m)
+        ref_dir = dist.ref_dir[:,i_spatial]
+        v_par = vel[0]*ref_dir[0] + vel[1]*ref_dir[1] + vel[2]*ref_dir[2]
+        v = np.sqrt(vec_ops.dot(vel, vel))
+        pitch = v_par / v
+        
+        plt.figure('energy-pitch dist')
+        plt.clf()
+        plt.hist2d(E, pitch, bins=50)
+        plt.ylim(-1,1)
+        plt.xlabel('Energy (keV)')
+        plt.ylabel('Pitch')
+
+    elif plot_type == 'energy':
+        E = relkin.get_energy(vel, m)
+
+        plt.figure('energy dist')
+        plt.clf()
+        plt.hist(E, bins=50)
+        plt.xlabel('Energy (keV)')
+
+    elif plot_type == 'vpar-vperp':
+        ref_dir = dist.ref_dir[:,i_spatial]
+        v_par = vel[0]*ref_dir[0] + vel[1]*ref_dir[1] + vel[2]*ref_dir[2]
+        vel_par = ref_dir[:,None] * v_par[None,:]
+        vel_perp = vel - vel_par
+        v_perp = np.sqrt(vec_ops.dot(vel_perp, vel_perp))
+
+        plt.figure('vpar-vperp dist')
+        plt.clf()
+        plt.hist2d(v_par, v_perp, bins=50)
+        plt.xlabel('v$_{\parallel}$ (m/s)')
+        plt.ylabel('v$_{\perp}$ (m/s)')
+
+    elif plot_type == 'speed':
+        v = np.sqrt(vec_ops.dot(vel, vel))
+
+        plt.figure('speed dist')
+        plt.clf()
+        plt.hist(v, bins=50)
+        plt.xlabel('Speed (m/s)')
