@@ -1,6 +1,7 @@
 """Tools for plotting spectra and distributions in the `dress` framework."""
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 import numpy as np
 import scipy.constants as const
 
@@ -141,7 +142,8 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     plt.axis('equal')
     
 
-def plot_dist_point(dist, i_spatial=1, n_samples=100_000, plot_type='energy-pitch'):
+def plot_dist_point(dist, i_spatial=1, n_samples=100_000, dist_type='energy-pitch', 
+                    log_dist= False, bins=50):
     """Plot distribution at a given spatial location.
 
     The plotting is done by sampling `n_samples` velocities and making a histogram,
@@ -159,58 +161,148 @@ def plot_dist_point(dist, i_spatial=1, n_samples=100_000, plot_type='energy-pitc
     n_samples : int
         Number of samples to draw for the histogram.
 
-    plot_type : str
+    dist_type : str
         How to visualize the distribution. Can be one of 
             - `energy-pitch`
             - `vpar-vperp`
             - `energy`
-            - `speed`"""
-    
+            - `speed`
+
+    log_dist : bool
+        Whether to plot dist in log scale (default is False).
+
+    bins : various
+        Bins specification as expected by np.histogram and np.histogram2d."""
+
+    d = _extract_dist(dist, i_spatial=i_spatial, n_samples=n_samples, 
+                      dist_type=dist_type, bins=bins)
+
+    # Plot settings
+    if log_dist:
+        norm = LogNorm()
+    else:
+        norm = None
+
+    if dist_type == 'energy-pitch':
+        plt.figure('energy-pitch dist')
+        plt.clf()
+        plt.pcolor(d[1], d[2], d[0].T, norm=norm)
+        plt.ylim(-1,1)
+        plt.xlabel('Energy (keV)')
+        plt.ylabel('v$_{\parallel}$/v (m/s)')
+        plt.colorbar()
+
+    elif dist_type == 'energy':
+        plt.figure('energy dist')
+        plt.clf()
+        x = 0.5*(d[1][1:] + d[1][:-1])
+        w = np.diff(d[1])
+        plt.bar(x, d[0], width=w, log=log_dist)
+        plt.xlabel('Energy (keV)')
+
+    elif dist_type == 'vpar-vperp':
+        plt.figure('vpar-vperp dist')
+        plt.clf()
+        plt.pcolor(d[1], d[2], d[0].T, norm=norm)
+        plt.xlabel('v$_{\parallel}$ (m/s)')
+        plt.ylabel('v$_{\perp}$ (m/s)')
+        plt.ylim(bottom=0)
+        plt.axis('equal')
+        plt.colorbar()
+
+    elif dist_type == 'speed':
+        plt.figure('speed dist')
+        plt.clf()
+        x = 0.5*(d[1][1:] + d[1][:-1])
+        w = np.diff(d[1])
+        plt.bar(x, d[0], width=w, log=log_dist)
+        plt.xlabel('Speed (m/s)')
+
+
+def _extract_dist(dist, i_spatial=1, n_samples=100_000, dist_type='energy-pitch', bins=50):
+    """Sample distribution at the given spatial point 
+    and generate histogram in the requested variables.
+
+    Possible choices for `dist_type` are
+        - `energy-pitch`
+        - `vpar-vperp`
+        - `energy`
+        - `speed`
+
+    `kwargs` are passed to np.histogram/histogram2d."""
+
     # Sample velocities from the distribution
     vel = dist.sample(n_samples, index=i_spatial)
+    density = dist.density[i_spatial]
 
     # Convert to the appropriate coordinates
     m = dist.particle.m     # mass i keV/c**2
 
-    if plot_type == 'energy-pitch':
+    if dist_type == 'energy-pitch':
         E = relkin.get_energy(vel, m)
         ref_dir = dist.ref_dir[:,i_spatial]
-        v_par = vel[0]*ref_dir[0] + vel[1]*ref_dir[1] + vel[2]*ref_dir[2]
+        v_par = np.sum(vel*ref_dir[:,None], axis=0)
         v = np.sqrt(vec_ops.dot(vel, vel))
         pitch = v_par / v
+        h = np.histogram2d(E, pitch, density=True, bins=bins)
         
-        plt.figure('energy-pitch dist')
-        plt.clf()
-        plt.hist2d(E, pitch, bins=50)
-        plt.ylim(-1,1)
-        plt.xlabel('Energy (keV)')
-        plt.ylabel('Pitch')
-
-    elif plot_type == 'energy':
+    elif dist_type == 'energy':
         E = relkin.get_energy(vel, m)
-
-        plt.figure('energy dist')
-        plt.clf()
-        plt.hist(E, bins=50)
-        plt.xlabel('Energy (keV)')
-
-    elif plot_type == 'vpar-vperp':
+        h = np.histogram(E, density=True, bins=bins)
+        
+    elif dist_type == 'vpar-vperp':
         ref_dir = dist.ref_dir[:,i_spatial]
-        v_par = vel[0]*ref_dir[0] + vel[1]*ref_dir[1] + vel[2]*ref_dir[2]
+        v_par = np.sum(vel*ref_dir[:,None], axis=0)
         vel_par = ref_dir[:,None] * v_par[None,:]
         vel_perp = vel - vel_par
         v_perp = np.sqrt(vec_ops.dot(vel_perp, vel_perp))
+        h = np.histogram2d(v_par, v_perp, density=True, bins=bins)
 
-        plt.figure('vpar-vperp dist')
-        plt.clf()
-        plt.hist2d(v_par, v_perp, bins=50)
-        plt.xlabel('v$_{\parallel}$ (m/s)')
-        plt.ylabel('v$_{\perp}$ (m/s)')
-
-    elif plot_type == 'speed':
+    elif dist_type == 'speed':
         v = np.sqrt(vec_ops.dot(vel, vel))
+        h = np.histogram(v, density=True, bins=bins)
 
-        plt.figure('speed dist')
-        plt.clf()
-        plt.hist(v, bins=50)
-        plt.xlabel('Speed (m/s)')
+    d = h[0] * density
+    
+    return (d, *h[1:])
+
+        
+def explore_dist(dist, **kwargs):
+    """Interactive distribution plots.
+
+    The particle density as a function of posistion is plotted.
+    By clocking in this figure the user can plot the velocity distribution
+    at the different points.
+
+    Keyword arguments are passed to plot_dist_point."""
+
+    if dist.pos is None:
+        raise ValueError('Must set pos attribute')
+
+    if len(dist.pos) > 2:
+        print('Only 2D plotting supported so far. Plotting density projected on first two dimensions.')
+
+    # Plot density
+    density_fig = plt.figure('density')
+    plt.tripcolor(dist.pos[0], dist.pos[1], dist.density)
+    plt.axis('equal')
+
+    click_fun = lambda event: _density_click_fun(event, dist, **kwargs)
+    cid = density_fig.canvas.mpl_connect('button_press_event', click_fun)    # connect to event manager
+
+    return density_fig, click_fun
+   
+ 
+def _density_click_fun(event, dist, **kwargs):
+    """Determine what happens after clicking in the density plot."""
+
+    # Find the spatial point closest to the click
+    x_click = event.xdata
+    y_click = event.ydata
+
+    distance = np.sqrt( (x_click - dist.pos[0])**2 + (y_click - dist.pos[1])**2 )
+
+    i_click = np.argmin(distance)
+
+    plot_dist_point(dist, i_spatial=i_click, **kwargs)
+    plt.draw()

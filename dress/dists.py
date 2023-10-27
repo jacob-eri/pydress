@@ -34,7 +34,12 @@ class VelocityDistribution:
     n_spatial : int
         The number of spatial points the distribution is given at. This is typically inferred 
         from the shapes of the distribution data supplied to the constructors of the various 
-        sub-classes below."""
+        sub-classes below.
+
+    pos : tuple of arrays
+        Coordinates of each spatial point, e.g. (R,Z) or (X,Y,Z).
+        Not necessary for any of the sampling routines, but could be useful
+        for the user when plotting etc."""
 
     def __init__(self, particle, density=None, v_collective=None):
         """Create velocity distribution.
@@ -55,6 +60,8 @@ class VelocityDistribution:
         self.particle = particle
         self.density = np.atleast_1d(density)
         self.v_collective = v_collective
+
+        self.pos = None
 
     def sample(self, n, index=0):
         """Sample `n` velocity vectors from the distribution.
