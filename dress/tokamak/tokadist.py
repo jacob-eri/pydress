@@ -120,6 +120,19 @@ class RhoDistData(TokaDistData):
         self.flux_map = flux_map
 
 
+    @property
+    def rho(self):
+        return self._rho
+
+    @rho.setter
+    def rho(self, x):
+        rho_last = x[-1]*1.1
+        _rho = np.zeros(len(x)+1)
+        _rho[:-1] = x
+        _rho[-1] = rho_last
+        self._rho = _rho
+
+
     def _get_spatial_index(self, R, Z):
         rho_RZ = self.flux_map.get_rho(R, Z)
         ind_RZ = self.ind_fun(rho_RZ)
