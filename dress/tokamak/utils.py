@@ -88,7 +88,34 @@ class FluxSurfaceMap:
         rho_index = griddata((self.Rtab, self.Ztab), index_values, (R, Z), method='nearest')
 
         return rho_index.astype('int')
+
         
+    def calc_dvol(self, rho_axis):
+        """Get volume enclosed between each flux surface pairs in `rho_axis`."""
+
+        # Generate rectangular grid
+        R = np.linspace(self.Rtab.min(), self.Rtab.max(), 250)
+        Z = np.linspace(self.Ztab.min(), self.Ztab.max(), 300)
+        dR = R[1] - R[0]
+        dZ = Z[1] - Z[0]
+        R, Z = np.meshgrid(R, Z, indexing='ij')
+
+        R = R.flatten()
+        Z = Z.flatten()
+        dV = 2*np.pi*R*dR*dZ
+        rho_grid = self.get_rho(R, Z)
+
+        # Sum volume of grid points inside each flux surface
+        dvol = np.zeros_like(rho_axis)
+        vol_tot = 0.0
+
+        for i in range(len(rho_axis)):
+            enclosed = rho_grid <= rho_axis[i]
+            dvol[i] = np.sum(dV[enclosed]) - vol_tot
+            vol_tot += dvol[i]
+
+        return dvol
+
 
 class FluxSurfaceQuantity:
     """A class for representing flux surface quantities in tokamaks."""

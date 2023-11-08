@@ -14,7 +14,7 @@ class TokaDistData:
     The distribution data is held in an array `F`, organized such that
     `F[i]` gives the distribution data at spatial point with index `i`.
 
-    The distribution data at a given spatial point  could be a scalar 
+    The distribution data at a given spatial point. Could be a scalar 
     (e.g. temperature) or an array representing e.g. f(v), f(E,pitch) etc."""
 
     def __init__(self, dist_data, density_data, axes):
