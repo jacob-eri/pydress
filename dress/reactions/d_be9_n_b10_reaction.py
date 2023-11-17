@@ -24,11 +24,12 @@ class DBe9NB10Reaction(Reaction):
         tab_cross_section[:,1] *= 1e-28                    # convert from barn to m**2
 
         self.tab_cross_section = tab_cross_section
+        self.fill_val_high_energy = 0.0
 
     
     def _calc_sigma_tot(self, E):
         sigma =  np.interp(E, self.tab_cross_section[:,0], self.tab_cross_section[:,1],
-                           left=0.0, right=0.0)
+                           left=0.0, right=self.fill_val_high_energy)
 
         return sigma
 
