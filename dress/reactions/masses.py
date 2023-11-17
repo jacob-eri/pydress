@@ -50,6 +50,11 @@ m9Be = m9Be - 4*me        # u
 m9B = (9*u_keV + 12416.5) / u_keV
 m9B = m9B - 5*me          # u
 
+# 10-B mass
+# (https://www.nndc.bnl.gov/nudat3/. Atomic binding energy neglected)
+m10B = (10*u_keV + 12050.611) / u_keV
+m10B = m10B - 5*me          # u
+
 # 12-C mass
 # (from https://www.nndc.bnl.gov/nudat3/. Atomic binding energy neglected)
 m12C = 12*u_keV / u_keV

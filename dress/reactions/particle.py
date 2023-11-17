@@ -62,6 +62,11 @@ class Particle:
             self.long_name = 'boron-9'
             self.u = masses.m9B
 
+        elif name in ['10b', 'b10']:
+            self.name = 'b10'
+            self.long_name = 'boron-10'
+            self.u = masses.m10B
+
         elif name in ['12c', 'c12']:
             self.name = 'c12'
             self.long_name = 'carbon-12'
