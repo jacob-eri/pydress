@@ -6,6 +6,8 @@ from dress.reactions import masses
 class Particle:
     """A class for holding particle info."""
 
+    __slots__ = ('name', 'long_name', 'u', 'excitation_energy', 'm')
+
     def __init__(self, name):
 
         name = name.lower()

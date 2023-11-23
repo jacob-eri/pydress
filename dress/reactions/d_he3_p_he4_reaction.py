@@ -7,6 +7,8 @@ from dress.reactions.reaction import Reaction
 class DHe3PHe4Reaction(Reaction):
     """Class representing the d + he3 -> p + he4 fusion reaction."""
 
+    __slots__ = ()
+
     def __init__(self):
 
         super().__init__('d', 'he3', 'p', '4he', None)

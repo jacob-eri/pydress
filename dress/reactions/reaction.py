@@ -4,6 +4,8 @@ from dress.reactions.particle import Particle
 class Reaction:
     """Base class for representing nuclear reactions with two or three particles in the final state."""
 
+    __slots__ = ('name', 'a', 'b', 'p1', 'p2', 'p3')
+
     def __init__(self, a, b, p1, p2, p3):
         
         self.name = f'{a}-{b}'

@@ -43,6 +43,8 @@ def load_tab_cross_section(file_path):
 class AlphaScattering(Reaction):
     """A class representing alpha scattering on D or T."""
 
+    __slots__ = ('sigma_tab', 'sigma_diff_tab', 'sigma_diff_interp', 'cos_theta_max')
+
     def __init__(self, d_or_t, cross_section_file):
         
         super().__init__(d_or_t, 'alpha', d_or_t, 'alpha', None)

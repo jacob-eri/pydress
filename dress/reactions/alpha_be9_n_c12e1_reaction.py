@@ -11,6 +11,8 @@ from dress.reactions.reaction import Reaction
 class AlphaBe9NC12E1Reaction(Reaction):
     """Class representing the He4 + Be9 -> n + 12C(E1) fusion reaction."""
 
+    __slots__ = ('tab_cross_section')
+
     def __init__(self):
 
         super().__init__('he4', 'be9', 'n', 'c12(e1)', None)

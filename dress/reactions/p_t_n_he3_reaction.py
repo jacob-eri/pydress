@@ -10,6 +10,8 @@ from dress.reactions.reaction import Reaction
 class PTNHe3Reaction(Reaction):
     """Class representing the p + t -> n + he3 fusion reaction."""
 
+    __slots__ = ('tab_cross_section')
+
     def __init__(self):
 
         super().__init__('p', 't', 'n', 'he3', None)

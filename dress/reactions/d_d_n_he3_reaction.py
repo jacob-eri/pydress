@@ -22,6 +22,8 @@ n_endf = c_endf.shape[0] - 1
 class DDNHe3Reaction(Reaction):
     """Class representing the d + d -> n + he3 fusion reaction."""
 
+    __slots__ = ()
+
     def __init__(self):
 
         super().__init__('d', 'd', 'n', 'he3', None)
