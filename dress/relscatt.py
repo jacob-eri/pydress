@@ -153,8 +153,11 @@ def invariant_to_momentum(inv, reactant_data, m1, u1):
     p1[valid_minus] = p1_minus[valid_minus]
     p1[valid_plus] = p1_plus[valid_plus]
 
-    if np.any(valid_plus & valid_minus):
-        print('NOTE: two kinematically allowed solutions found. Using the one with highest energy.')
+    has_two_solutions = valid_plus & valid_minus
+    if np.any(has_two_solutions):
+        n = np.sum(has_two_solutions)
+        ntot = len(has_two_solutions)
+        print(f'NOTE: two kinematically allowed solutions found in {n}/{ntot} cases. Using the one with highest energy.')
 
     return p1
 
