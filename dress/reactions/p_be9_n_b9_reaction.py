@@ -11,7 +11,7 @@ from dress.reactions.reaction import Reaction
 class PBe9NB9Reaction(Reaction):
     """Class representing the p + Be9 -> n + 9B(g.s.) fusion reaction."""
 
-    __slots__ = ('tab_cross_section', 'fill_value_high_energy')
+    __slots__ = ('tab_cross_section', 'fill_val_high_energy')
 
     def __init__(self):
 
@@ -26,12 +26,12 @@ class PBe9NB9Reaction(Reaction):
         tab_cross_section[:,1] *= 1e-28                    # convert from barn to m**2
 
         self.tab_cross_section = tab_cross_section
-        self.fill_value_high_energy = 0.0
+        self.fill_val_high_energy = 0.0
 
     
     def _calc_sigma_tot(self, E):
         sigma =  np.interp(E, self.tab_cross_section[:,0], self.tab_cross_section[:,1],
-                           left=0.0, right=self.fill_value_high_energy)
+                           left=0.0, right=self.fill_val_high_energy)
 
         return sigma
 
