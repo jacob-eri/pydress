@@ -227,9 +227,7 @@ def _extract_dist(dist, i_spatial=1, n_samples=100_000, dist_type='energy-pitch'
         - `energy-pitch`
         - `vpar-vperp`
         - `energy`
-        - `speed`
-
-    `kwargs` are passed to np.histogram/histogram2d."""
+        - `speed`"""
 
     # Sample velocities from the distribution
     vel = dist.sample(n_samples, index=i_spatial)

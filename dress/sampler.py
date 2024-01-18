@@ -143,7 +143,7 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
         made to reconstruct the bin widths from the axes arrays.
     var_type : str
         Can be either 'continuous', in which case the sampled values are distributed uniformly
-        within each bin, of 'discrete', in which case onely the exact tabulated values are sampled.
+        within each bin, of 'discrete', in which case only the exact tabulated values are sampled.
 
     Returns
     -------
