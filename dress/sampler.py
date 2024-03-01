@@ -65,6 +65,8 @@ def sample_sphere(n_samples):
     of a unit sphere. Output points are given in a rectangular coordinate 
     system and is given as an array with shape (3, n_samples). """
 
+    n_samples = int(n_samples)
+
     # Uniformly sample cosine of polar angle
     u = np.random.uniform(-1, 1, size=n_samples)
 
