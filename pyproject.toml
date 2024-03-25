@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydress"
+version = "1.0"
+description = "Directional Relativistic Spectrum Simulator"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research"
+]
+authors = [
+  { name="Jacob Eriksson" },
+  { name="Sean Conroy" }
+]
+requires-python = ">=3.0"
+keywords = ["python", "fusion"]
+dependencies = [
+    "numpy",
+    "scipy"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/jacob-eri/pydress"
+"Bug Tracker" = "https://github.com/jacob-eri/pydress/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["*.txt"]
