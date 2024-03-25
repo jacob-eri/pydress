@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dress"
+name = "pydress"
 version = "1.0"
 description = "Directional Relativistic Spectrum Simulator"
 readme = "README.md"
@@ -29,5 +29,8 @@ dependencies = [
 "Bug Tracker" = "https://github.com/jacob-eri/pydress/issues"
 
 [tool.setuptools]
-package-dir = {"" = "dress"}
+package-dir = {"" = "src"}
 include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["*.txt"]
