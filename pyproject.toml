@@ -27,3 +27,7 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/jacob-eri/pydress"
 "Bug Tracker" = "https://github.com/jacob-eri/pydress/issues"
+
+[tool.setuptools]
+package-dir = {"" = "dress"}
+include-package-data = true
