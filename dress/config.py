@@ -1,2 +1,4 @@
 # Location of the cross section data
-cross_section_dir = '/home/jeriks/Utils/pydress/data/cross-sections'
+import os
+package_directory = os.path.dirname(os.path.abspath(__file__))
+cross_section_dir = os.path.join(package_directory,"../data/cross-sections/")
