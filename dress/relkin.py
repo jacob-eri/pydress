@@ -37,7 +37,6 @@ def get_energy(v, m):
     return E
 
 
-
 def four_vector(E, p):
     E = np.atleast_1d(E)
 

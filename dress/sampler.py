@@ -7,13 +7,15 @@ import scipy.integrate as integrate
 def sample_mono(val, n_samples):
     """ Sample delta function. """
 
+    n_samples = int(n_samples)
     s = val * np.ones(n_samples)
 
     return s
 
 def sample_uniform(val_range, n_samples):
     """ Sample values from uniform distribution. """
-
+    
+    n_samples = int(n_samples)
     s = np.random.uniform(val_range[0], val_range[1], size=n_samples)
 
     return s
@@ -26,6 +28,8 @@ def sample_acc_rej(f, lims, fmax, n_samples, quiet=True):
          lims = ([x0_min,x1_min, ...], [x0_max,x1_max, ...])
 
     'fmax' is the maximum number that f can take. """
+
+    n_samples = int(n_samples)
 
     # Sample points xp and fp in the hypercube bounded by 'lims' and 'fmax', and keep only
     # the points that fall below f(*xp). Loop until we have collected enough samples.
@@ -60,7 +64,7 @@ def sample_acc_rej(f, lims, fmax, n_samples, quiet=True):
 
     return s
 
-def sample_sphere(n_samples):
+def sample_sphere(n_samples, pitch_range=(-1, 1)):
     """Sample points that are uniformly distributed over the surface
     of a unit sphere. Output points are given in a rectangular coordinate 
     system and is given as an array with shape (3, n_samples). """
@@ -68,7 +72,7 @@ def sample_sphere(n_samples):
     n_samples = int(n_samples)
 
     # Uniformly sample cosine of polar angle
-    u = np.random.uniform(-1, 1, size=n_samples)
+    u = np.random.uniform(*pitch_range, size=n_samples)
 
     # Uniformly sample the azimuthal angle
     theta = np.random.uniform(0, 2*np.pi, size=n_samples)
@@ -90,6 +94,8 @@ def sample_mcmc(F, x0, dx, n_samples):
     'x0' is the starting point for the Markov chain.
     'dx' is a suitable step size.
     """
+
+    n_samples = int(n_samples)
 
     # Parameters for controlling how to step to new points
     mean_step = np.zeros_like(x0)
