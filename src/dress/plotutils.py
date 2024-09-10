@@ -142,7 +142,7 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     plt.axis('equal')
     
 
-def plot_dist_point(dist, i_spatial=1, n_samples=100_000, dist_type='energy-pitch', 
+def plot_dist_point(dist, i_spatial=0, n_samples=100_000, dist_type='energy-pitch', 
                     log_dist= False, bins=50):
     """Plot distribution at a given spatial location.
 
