@@ -332,6 +332,9 @@ def calc_vols(vols, dist_a, dist_b, spec_calc, bins, integrate=True, quiet=True,
             # Compute spatially resolved spectrum (with units particles/bin/m**3/s)
             spec[i] = s
 
+    if not quiet:
+        print('\nDone!')
+
     return spec
 
 
