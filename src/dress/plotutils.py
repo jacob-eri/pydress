@@ -58,7 +58,7 @@ def plot_spec(spec, *bin_edges, **kwargs):
     
     convert_E : bool
         Whether to convert the energy axis according to the value of `E_unit`, under 
-        the assumption that the input energy axis is in keV (the default units of dress). 
+        the assumption that the input energy axis is in keV (the default units of pydress). 
         Default is True.
 
     erase : bool
