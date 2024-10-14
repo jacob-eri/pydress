@@ -34,6 +34,13 @@ def plot_spec(spec, *bin_edges, **kwargs):
 
     *** Possible keyword arguments: ***
 
+    dV : array
+        Volume elements, if spec is spatially resolved (e.g. produced with 
+        `dress.utils.calc_vols` using `integrate=False`)
+
+    dynamic_range : int
+        Number of orders of magnitude spanned by the spectrum axis. Default is 5.
+
     E_label : str
         Label for the energy axis. Default is "E".
 
@@ -59,6 +66,8 @@ def plot_spec(spec, *bin_edges, **kwargs):
     """
 
     # Get keyword arguments
+    dV = kwargs.get('dV', None)
+    dyn_range = kwargs.get('dynamic_range', 5)
     E_label = kwargs.get('E_label', 'E')
     A_label = kwargs.get('A_label', 'cos(θ)')
     spec_label = kwargs.get('spec_label', 'events/bin/s')
@@ -66,6 +75,10 @@ def plot_spec(spec, *bin_edges, **kwargs):
     E_unit = kwargs.get('E_unit', 'MeV')
     convert_E = kwargs.get('convert_E', True)
     erase = kwargs.get('erase', True)
+
+    # Integrate over volume, if necessary
+    if dV is not None:
+        spec = np.sum(spec*dV[:,None], axis=0)
 
     # Convert energy scale, if necessary
     E_bins = bin_edges[0]
@@ -81,6 +94,7 @@ def plot_spec(spec, *bin_edges, **kwargs):
         plt.step(E_bins[1:], spec, where='pre', label=label)
         plt.xlabel(E_label)
         plt.ylabel(spec_label)
+        plt.ylim(bottom=spec.max()/10**dyn_range)
         plt.legend()
         
     if len(bin_edges) == 2:
@@ -90,16 +104,17 @@ def plot_spec(spec, *bin_edges, **kwargs):
         plt.pcolor(E_bins, A_bins, spec.T)
         plt.xlabel(E_label)
         plt.ylabel(A_label)
+        plt.clim(vmin=spec.max()/10**dyn_range)
         plt.colorbar(label=spec_label)
         
     
-def plot_emissivity(vols, spec, *bin_edges, **kwargs):
+def plot_emissivity(pos, spec, *bin_edges, **kwargs):
     """Plot 2D spatial emissivity from given volume elements.
 
     Parameters
     ----------
-    vols : list of instances of dress.volspec.VolumeElement
-        The volume elements for which the spectra has been calculated.
+    pos : tuple
+        The position coordinates (e.g. (R,Z)) where the spectrum is given.
     
     spec : spectrum array
         This should be a spectrum of the kind calculated with dress.volspec.calc_vols, 
@@ -114,7 +129,7 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     ems_label : str
         Label for the emissivity axis. Default is "events/m³/s"."""
 
-    if len(vols.pos) != 2:
+    if len(pos) != 2:
         raise ValueError('Emissivity plot currently only works with 2D profiles')
 
     # Keyword arguments
@@ -123,8 +138,8 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
     ems_label = kwargs.get('ems_label', 'events/m³/s')
 
     # Extract data to plot
-    x = np.atleast_1d(vols.pos[0])
-    y = np.atleast_1d(vols.pos[1])
+    x = np.atleast_1d(pos[0])
+    y = np.atleast_1d(pos[1])
 
     if spec.ndim == 2:
         sum_axis = 1
