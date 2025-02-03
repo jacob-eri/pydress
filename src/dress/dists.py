@@ -5,6 +5,7 @@ within the `dress` framework."""
 import numpy as np
 from scipy.constants import c
 from scipy.interpolate import interp1d
+import warnings
 
 from dress import relkin
 from dress import sampler
@@ -507,15 +508,13 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
 
         neg_E = E < 0.0
         if np.any(neg_E):
-            print(f'Sampled kinetic energy is negative ({E[neg_E]} keV)')
-            print('Replacing with zero and moving on')
+            warnings.warn(f'Sampled kinetic energy is negative ({E[neg_E]} keV).\nReplacing with zero and moving on', RuntimeWarning)
             E[neg_E] = 0.0
 
         invalid_pitch = np.abs(pitch) > 1.0
         if np.any(invalid_pitch):
-            print(f'Abs of sampled pitch is > 1 ({pitch[invalid_pitch]})')
-            print('Adjusting to +/-1 and moving on.')
-            pitch[-invalid_pitch] = np.sign(pitch[invalid_pitch])
+            warnings.warn(f'Abs of sampled pitch is > 1 ({pitch[invalid_pitch]}).\nAdjusting to +/-1 and moving on.', RuntimeWarning)
+            pitch[invalid_pitch] = np.sign(pitch[invalid_pitch])
 
         return E, pitch
 
