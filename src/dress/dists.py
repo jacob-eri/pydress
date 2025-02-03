@@ -80,6 +80,10 @@ class VelocityDistribution:
 
         n = int(n)
         v = self._sample(n, index=index)
+
+        invalid = ~np.isfinite(v)
+        if np.any(invalid):
+            raise ValueError(f'NaN/Inf in sampled velocity at spatial index {index}')
         
         if self.v_collective is not None:
             v_coll = vec.make_vector(self.v_collective[:,index])
@@ -500,6 +504,18 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
 
         E = sample[0]
         pitch = sample[1]
+
+        neg_E = E < 0.0
+        if np.any(neg_E):
+            print(f'Sampled kinetic energy is negative ({E[neg_E]} keV)')
+            print('Replacing with zero and moving on')
+            E[neg_E] = 0.0
+
+        invalid_pitch = np.abs(pitch) > 1.0
+        if np.any(invalid_pitch):
+            print(f'Abs of sampled pitch is > 1 ({pitch[invalid_pitch]})')
+            print('Adjusting to +/-1 and moving on.')
+            pitch[-invalid_pitch] = np.sign(pitch[invalid_pitch])
 
         return E, pitch
 

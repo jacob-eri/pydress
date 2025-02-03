@@ -30,6 +30,10 @@ class ReactantData:
         self.Ptot = Pa + Pb
         self.Mtot = np.sqrt(relkin.mult_four_vectors(self.Ptot, self.Ptot))      # total invariant mass
 
+        invalid = ~np.isfinite(self.Mtot)
+        if np.any(invalid):
+            raise ValueError('Nan/Inf in invariant mass')
+
         self.Tcm = self.Mtot - ma - mb    # kinetic energy in the CMS
         
         # Gamma and beta factors for the CMS

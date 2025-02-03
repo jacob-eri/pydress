@@ -222,6 +222,10 @@ def sample_tab(dist, *axes, n_samples=1e6, dx=None, var_type='continuous'):
     
     sample = sample.squeeze()        # remove singleton dimension in case of 1D dist
 
+    invalid = ~np.isfinite(sample)
+    if np.any(invalid):
+        raise ValueError('NaN/Inf in sampled values!')
+
     return sample
     
 def _reconstruct_bin_widths(bin_centers):
