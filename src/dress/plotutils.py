@@ -89,7 +89,8 @@ def plot_spec(spec, *bin_edges, **kwargs):
     E_label += f' ({E_unit})'
 
     if len(bin_edges) == 1:
-        plt.figure('DRESS energy spectrum')
+        figure_name = kwargs.get('figure_name', 'DRESS energy spectrum')
+        plt.figure(figure_name)
         if erase: plt.clf()
         plt.step(E_bins[1:], spec, where='pre', label=label)
         plt.xlabel(E_label)
@@ -98,7 +99,8 @@ def plot_spec(spec, *bin_edges, **kwargs):
         plt.legend()
         
     if len(bin_edges) == 2:
-        plt.figure('DRESS energy-pitch spectrum')
+        figure_name = kwargs.get('figure_name', 'DRESS energy-pitch spectrum')
+        plt.figure(figure_name)
         if erase: plt.clf()
         A_bins = bin_edges[1]
         plt.pcolor(E_bins, A_bins, spec.T)
