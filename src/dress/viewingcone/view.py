@@ -58,7 +58,9 @@ class Collimator:
 
         if back_radius is None:
             self.back_radius = radius
-
+        else:
+            self.back_radius = back_radius
+        
         # Line along the center
         mid_vec = back_point - front_point
         self.mid_line = Line(front_point, back_point)
@@ -105,7 +107,7 @@ class Collimator:
             intensity += np.dot(flux,self.back_plane.n)
 
         # Normalize and make units particles/s
-        A = np.pi*self.radius**2
+        A = np.pi*self.back_radius**2
         intensity = intensity*A/n_samples
 
         return intensity
