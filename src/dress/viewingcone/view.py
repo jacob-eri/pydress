@@ -72,22 +72,25 @@ class Collimator:
         self.back_plane = Plane(back_point, mid_vec)
 
 
-    def get_solid_angle(self, p, n_samples=100):
-        """Determine the solid angle of the detector surface seen from point ´p´."""
+    def get_solid_angle(self, p0, dx=0.0, dy=0.0, dz=0.0, n_samples=100):
+        """Determine the solid angle of the detector surface seen from voxel centered at ´p0´."""
 
-        intensity = self.get_intensity(p, n_samples=n_samples)
+        intensity = self.get_intensity(p0, dx=dx, dy=dy, dz=dz, n_samples=n_samples)
         omega = intensity*4*np.pi
         
         return omega
 
 
-    def get_intensity(self, p, n_samples=100):
-        """Determine the fraction of particles emitted from ´p´ that hits the detector.
+    def get_intensity(self, p0, dx=0.0, dy=0.0, dz=0.0, n_samples=100):
+        """Determine the fraction of particles emitted from voxelel centered at ´p0´ that hits the detector.
 
         Parameters
         ----------
-        p : array, shape (3,)
-            x,y,x coordinates of the point from which particles are emitted.
+        p0 : array, shape (3,)
+            x,y,x coordinates of the center of the volume from which particles are emitted.
+
+        dx, dy, dz : float
+            Widths of the rectangular block from which particles are emitted.
 
         Returns
         -------
@@ -97,12 +100,17 @@ class Collimator:
         """
         
         # Sample points on the detector surface
-        u,v = sample_circle(n_samples, radius=self.back_radius)
+        U,V = sample_circle(n_samples, radius=self.back_radius)
+
+        # Sample points from the emission volume
+        P = np.random.uniform(low=(p0[0]-dx/2.0, p0[1]-dy/2.0, p0[2]-dz/2.0),
+                              high=(p0[0]+dx/2.0, p0[1]+dy/2.0, p0[2]+dz/2.0),
+                              size=(n_samples, 3))
 
         # Compute average particle intensity incident on the detector
         intensity = 0.0
-        for _u,_v in zip(u,v):
-            q = self.back_plane.eval_uv(_u,_v)
+        for u,v,p in zip(U,V,P):
+            q = self.back_plane.eval_uv(u,v)
             flux = self._get_flux(p,q)
             intensity += np.dot(flux,self.back_plane.n)
 
