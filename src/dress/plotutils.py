@@ -53,6 +53,9 @@ def plot_spec(spec, *bin_edges, **kwargs):
     label : str
         Label for the legend. Default is None (no legend will be drawn).
 
+    figure_name : str
+        Name for the matplotlib figure. Default is "DRESS energy(-pitch) spectrum".
+
     E_unit : str
         Which energy units to use. Default is "MeV".
     
@@ -110,7 +113,7 @@ def plot_spec(spec, *bin_edges, **kwargs):
         plt.colorbar(label=spec_label)
         
     
-def plot_emissivity(pos, spec, *bin_edges, **kwargs):
+def plot_emissivity(pos, spec, **kwargs):
     """Plot 2D spatial emissivity from given volume elements.
 
     Parameters
@@ -122,14 +125,14 @@ def plot_emissivity(pos, spec, *bin_edges, **kwargs):
         This should be a spectrum of the kind calculated with dress.volspec.calc_vols, 
         using the `integrate=False` option.
 
-    bin_edges : arrays
-        Energy bins and (optionally) pitch bins for the product particle.
-
     x_label, y_label : str
         Label for the spatial x and y- axes.
 
     ems_label : str
-        Label for the emissivity axis. Default is "events/m³/s"."""
+        Label for the emissivity axis. Default is "events/m³/s".
+
+    figure_name : str
+        Nama for the matplotlib figure. Default is " DRESS emissivity"."""
 
     if len(pos) != 2:
         raise ValueError('Emissivity plot currently only works with 2D profiles')
@@ -138,6 +141,7 @@ def plot_emissivity(pos, spec, *bin_edges, **kwargs):
     x_label = kwargs.get('x_label', 'x')
     y_label = kwargs.get('y_label', 'y')
     ems_label = kwargs.get('ems_label', 'events/m³/s')
+    figure_name = kwargs.get('figure_name', 'DRESS emissivity')
 
     # Extract data to plot
     x = np.atleast_1d(pos[0])
@@ -150,7 +154,7 @@ def plot_emissivity(pos, spec, *bin_edges, **kwargs):
 
     ems = spec.sum(axis=sum_axis)
 
-    plt.figure('DRESS emissivity')
+    plt.figure(figure_name)
     plt.clf()
     plt.tripcolor(x, y, ems)
     plt.xlabel(x_label)
