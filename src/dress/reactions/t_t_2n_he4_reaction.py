@@ -26,19 +26,7 @@ class TT2NHe4Reaction(Reaction):
         self.tab_cross_section = tab_cross_section
         
     
-    def calc_sigma_tot(self, E):
-        """Evaluate total cross section.
-
-        Arguments
-        ----------
-        E : array-like
-            Reactant energies in the center of mass frame (keV).
-
-        Returns
-        -------
-        array
-            The cross section (in m**2) for each energy value.
-        """
+    def _calc_sigma_tot(self, E):
         
         sigma =  np.interp(E, self.tab_cross_section[:,0], self.tab_cross_section[:,1],
                            left=0.0, right=0.0)
@@ -46,22 +34,7 @@ class TT2NHe4Reaction(Reaction):
         return sigma
         
 
-    def calc_sigma_diff(self, E, costheta):
-        """Evaluate the angular differential cross section.
-
-        Arguments
-        ---------
-        E : array-like
-            Reactant energies in the center of mass frame (keV).
-        costheta : array-like
-            Cosine of the emission angle of the neutron 
-            (with respect to the reactant relative velocity)
-
-        Returns
-        -------
-        array
-            The cross section (in m**2 sr**-1) for each energy value.
-        """
+    def _calc_sigma_diff(self, E, costheta):
 
         E = np.atleast_1d(E)
         costheta = np.atleast_1d(costheta)
