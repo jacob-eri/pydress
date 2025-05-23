@@ -81,7 +81,12 @@ def plot_spec(spec, *bin_edges, **kwargs):
 
     # Integrate over volume, if necessary
     if dV is not None:
-        spec = np.sum(spec*dV[:,None], axis=0)
+        integrated_spec = 0.0
+        
+        for i in range(len(dV)):
+            integrated_spec = integrated_spec + spec[i]*dV[i]
+            
+        spec = integrated_spec
 
     # Convert energy scale, if necessary
     E_bins = bin_edges[0]
@@ -210,7 +215,7 @@ def plot_dist_point(dist, i_spatial=0, n_samples=100_000, dist_type='energy-pitc
         plt.pcolor(d[1], d[2], d[0].T, norm=norm)
         plt.ylim(-1,1)
         plt.xlabel('Energy (keV)')
-        plt.ylabel('v$_{\parallel}$/v (m/s)')
+        plt.ylabel('v$_{\\parallel}$/v (m/s)')
         plt.colorbar()
 
     elif dist_type == 'energy':
@@ -225,8 +230,8 @@ def plot_dist_point(dist, i_spatial=0, n_samples=100_000, dist_type='energy-pitc
         plt.figure('vpar-vperp dist')
         plt.clf()
         plt.pcolor(d[1], d[2], d[0].T, norm=norm)
-        plt.xlabel('v$_{\parallel}$ (m/s)')
-        plt.ylabel('v$_{\perp}$ (m/s)')
+        plt.xlabel('v$_{\\parallel}$ (m/s)')
+        plt.ylabel('v$_{\\perp}$ (m/s)')
         plt.ylim(bottom=0)
         plt.axis('equal')
         plt.colorbar()
