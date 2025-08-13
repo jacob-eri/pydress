@@ -31,9 +31,9 @@ class TokaDistData:
             The density at each spatial point.
 
         axes : tuple of arrays
-            The axis along each dimension (e.g. speed, pitch , energy,...).
+            The axis along each dimension (e.g. speed, pitch, energy,...).
             The spatial dimension is handeled separately (by the 
-            `spatial_index_fun` argument) and is NOT included here."""
+            `_get_spatial_index` method) and is NOT included here."""
 
 
         self.F = dist_data

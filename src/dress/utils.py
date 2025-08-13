@@ -42,7 +42,7 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
 
 
     Keyword arguments for `dist_type = 'maxwellian'`
-    ---------------------------------------------
+    ----------------------------------------------
     temperature : array-like of shape (NP,)
         Temperature (keV) at each of the NP spatial points
 
@@ -65,7 +65,7 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
 
     
     Keyword arguments for `dist_type = 'speed'`
-    --------------------------------------------
+    -------------------------------------------
     speed_axis : array-like of shape (Nv)
         Speed axis of the tabulated distribution
 
@@ -90,7 +90,7 @@ def make_dist(dist_type, particle_name, NP, density, **kwargs):
 
 
     Keyword arguments for `dist_type = 'vpar-vperp'`
-    --------------------------------------------------
+    ------------------------------------------------
     vpar_axis : array-like of shape (Nvpar,)
         v_parallel axis of the tabulated distribution
 
