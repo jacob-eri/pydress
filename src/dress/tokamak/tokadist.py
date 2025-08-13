@@ -27,7 +27,7 @@ class TokaDistData:
             The distribution data. The length of the first dimension 
             should match the number of spatial points `NP`.
 
-        density : array of shape (NP,)
+        density_data : array of shape (NP,)
             The density at each spatial point.
 
         axes : tuple of arrays
@@ -102,6 +102,18 @@ class RhoDistData(TokaDistData):
 
         Parameters
         ----------
+
+        dist_data : array
+            The distribution data. The length of the first dimension 
+            should match the number of spatial points `NP`.
+
+        density_data : array of shape (NP,)
+            The density at each spatial point.
+
+        axes : tuple of arrays
+            The axis along each dimension (e.g. speed, pitch, energy,...).
+            The spatial dimension is provided separately (by the 
+            `rho_axis` argument) and is NOT included here.
 
         rho_axis : array
             The rho axis used by the distribution.
