@@ -10,12 +10,17 @@ class Line:
     """Vector representation of a line."""
 
     def __init__(self, p0, p1):
-        """Initialize Line instance from the two points ´l0´ and ´l1´."""
+        """Initialize Line instance from the two points ´p0´ and ´p1´."""
 
         self.p0 = p0
         self.p1 = p1
         self.l = p1 - p0   # vector in the direction of the line
 
+    def __call__(self, t):
+        """Evaluate xyz coordinates along the line. t=0 corresponds to p0 
+        and t=1 corresponds to p1."""
+
+        return self.p0[None,:] + t[:,None]*self.l[None,:]
 
 class Plane:
     """Vector representation of a plane."""
@@ -172,6 +177,87 @@ def find_intersection(line, plane):
     else:
         print('The line is parallel to the plane!')
         return None
+
+
+def gen_viewing_cone(coll, x_spec, y_spec, z_spec):
+    """Generate viewing cone specification.
+    
+    Parameters
+    ----------
+    
+    coll : viewingcone.Collimator instance
+        Collimator specification
+    
+    x_spec, y_spec, z_spec : length-3 tuples
+        Specification of the voxel positions and sizes. Each tuple
+         should contain the info (x_min, x_max, dx).
+         
+    Returns
+    -------
+    
+    vc : dict
+        Dictionary containing the viewing cone specification."""
+    
+    xmin, xmax, dx = x_spec
+    ymin, ymax, dy = y_spec
+    zmin, zmax, dz = z_spec
+
+    # Arrays with voxel data
+    x_vals = np.arange(xmin, xmax+dx, dx)
+    y_vals = np.arange(ymin, ymax+dy, dy)
+    z_vals = np.arange(zmin, zmax+dz, dz)
+
+    X,Y,Z = np.meshgrid(x_vals,y_vals,z_vals)
+    x = X.flatten()
+    y = Y.flatten()
+    z = Z.flatten()
+
+    n_voxels = len(x)
+
+    dv = dx*dy*dz * np.ones(n_voxels)
+    r = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y,x)
+
+    # Loop over voxels and calculate voxel weights and emission directions
+    omega = np.zeros(n_voxels)
+    u_cyl = np.zeros((n_voxels,3))
+    u_xyz = np.zeros((n_voxels,3))
+
+    for i in range(n_voxels):
+        # Solid angle
+        p0 = np.array([x[i], y[i], z[i]])
+        omega[i] = coll.get_solid_angle(p0, dx=dx, dy=dy, dz=dz, n_samples=100)
+
+        # Emission direction (Cartesian coordinates)
+        u = coll.back_point - p0
+        u_xyz[i] = u / get_norm(u)
+
+    # Convert emission direction to cylindrical coordinates
+    ux = u_xyz[:,0]
+    uy = u_xyz[:,1]
+    uz = u_xyz[:,2]
+
+    u_cyl[:,0] = ux*np.cos(phi) + uy*np.sin(phi)
+    u_cyl[:,1] = -ux*np.sin(phi) + uy*np.cos(phi)
+    u_cyl[:,2] = uz
+
+    # Remove voxels outside the field of view
+    inside = omega > 0.0 
+
+    # Put everything into a dictionary and return it
+    vc = {}
+    vc['r'] = r[inside]
+    vc['z'] = z[inside]
+    vc['phi'] = phi[inside]
+    vc['x'] = x[inside]
+    vc['y'] = y[inside]
+    vc['u_xyz'] = u_xyz[inside]
+    vc['u_cyl'] = u_cyl[inside]
+    vc['dv'] = dv[inside]
+    vc['omega'] = omega[inside]
+    vc['n_voxels'] = len(vc['omega'])
+
+    return vc
 
 
 def get_norm_squared(v):
