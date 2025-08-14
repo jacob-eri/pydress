@@ -186,16 +186,21 @@ class RZDistData(TokaDistData):
         self.Z = Z_vals
 
         self.flux_map = flux_map
-        self.spatial_index = np.arange(len(self.density))
+
+        # Density data was padded with one extra zero, which should not be included 
+        # in the list of spatial indices
+        self.spatial_index = np.arange(len(self.density)-1)
 
     def _get_spatial_index(self, R, Z):
         R = np.atleast_1d(R)
         Z = np.atleast_1d(Z)
 
         # Map each RZ value to the closest spatial grid point.
-        i_spatial = griddata((self.R, self.Z), self.spatial_index, (R,Z), method='nearest')
+        i_spatial = griddata((self.R, self.Z), self.spatial_index, (R,Z), method='nearest').astype('int64')
 
-        # Points outside the plasma should not get a valid index
+        # Points outside the plasma should not get a valid index.
+        # This is accomplished by adding 1 to the last spatial index value, since
+        # self.F and self.density were padded with an additional zero when initiated.
         X = self.flux_map.get_rho(R, Z)
         i_spatial[X>1.0] = self.spatial_index[-1] + 1
 
