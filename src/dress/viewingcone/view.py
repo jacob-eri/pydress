@@ -4,7 +4,7 @@ import numpy as np
 
 
 # Class definitions
-# --------------------
+# -----------------
 
 class Line:
     """Vector representation of a line."""
@@ -12,15 +12,24 @@ class Line:
     def __init__(self, p0, p1):
         """Initialize Line instance from the two points ´p0´ and ´p1´."""
 
-        self.p0 = p0
-        self.p1 = p1
-        self.l = p1 - p0   # vector in the direction of the line
+        self.p0 = np.array(p0)
+        self.p1 = np.array(p1)
+        self.l = self.p1 - self.p0   # vector in the direction of the line
 
     def __call__(self, t):
         """Evaluate xyz coordinates along the line. t=0 corresponds to p0 
         and t=1 corresponds to p1."""
 
         return self.p0[None,:] + t[:,None]*self.l[None,:]
+    
+    def get_distance(self, p):
+        """Calculate the perpendicular distance between array of points `p` and the line."""
+
+        u = p - self.p0[None,:]
+        d = get_norm(np.cross(self.l[None,:], u)) / get_norm(self.l)
+
+        return d
+
 
 class Plane:
     """Vector representation of a plane."""
@@ -29,7 +38,8 @@ class Plane:
         """Initialize Plane instance from the point ´p0´ on the plane
         and the vector ´n´ normal to the plane."""
 
-        self.p0 = p0
+        self.p0 = np.array(p0)
+        n = np.array(n)
         self.n = n / get_norm(n)
 
         # Construct two orthogonal unit vectors, u and v, that lie in the plane.
@@ -179,7 +189,7 @@ def find_intersection(line, plane):
         return None
 
 
-def gen_viewing_cone(coll, x_spec, y_spec, z_spec):
+def gen_viewing_cone(coll, x_range, y_range, z_range, dx, dy, dz, max_distance):
     """Generate viewing cone specification.
     
     Parameters
@@ -188,9 +198,16 @@ def gen_viewing_cone(coll, x_spec, y_spec, z_spec):
     coll : viewingcone.Collimator instance
         Collimator specification
     
-    x_spec, y_spec, z_spec : length-3 tuples
-        Specification of the voxel positions and sizes. Each tuple
-         should contain the info (x_min, x_max, dx).
+    x_range, y_range, z_range : length-3 tuples
+        Specification of the domain where the viewing cone is generated. 
+        Each tuple should contain the info (x_min, x_max).
+    
+    dx, dy, dz : float
+        Voxel dimensions.
+    
+    max_distance : float
+        Only points within this distance of the center of the sightline will be mapped.
+        Default is None, which means that all points will be mapped.
          
     Returns
     -------
@@ -198,19 +215,29 @@ def gen_viewing_cone(coll, x_spec, y_spec, z_spec):
     vc : dict
         Dictionary containing the viewing cone specification."""
     
-    xmin, xmax, dx = x_spec
-    ymin, ymax, dy = y_spec
-    zmin, zmax, dz = z_spec
+    xmin, xmax = x_range
+    ymin, ymax = y_range
+    zmin, zmax = z_range
 
-    # Arrays with voxel data
+    # Create grid covering the entire domain of interest
     x_vals = np.arange(xmin, xmax+dx, dx)
     y_vals = np.arange(ymin, ymax+dy, dy)
     z_vals = np.arange(zmin, zmax+dz, dz)
 
-    X,Y,Z = np.meshgrid(x_vals,y_vals,z_vals)
-    x = X.flatten()
-    y = Y.flatten()
-    z = Z.flatten()
+    x, y, z = np.meshgrid(x_vals,y_vals,z_vals)
+    x = x.flatten()
+    y = y.flatten()
+    z = z.flatten()
+
+    if max_distance is not None:
+        # Only consider points in the vicinity of the sightline
+        points = np.column_stack((x, y, z))
+        d = coll.mid_line.get_distance(points)
+        include = d < max_distance
+
+        x = x[include]
+        y = y[include]
+        z = z[include]
 
     n_voxels = len(x)
 
@@ -262,7 +289,7 @@ def gen_viewing_cone(coll, x_spec, y_spec, z_spec):
 
 def get_norm_squared(v):
     """Square of the vector ´v´."""
-    return np.dot(v,v)
+    return np.sum(v**2, axis=-1)
 
 
 def get_norm(v):
