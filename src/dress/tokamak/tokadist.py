@@ -78,7 +78,7 @@ class TokaDistData:
         """Return the spatial index for the given (R,Z) values."""
         pass         # to be over-ridden by subclasses
 
-    def map_dist(self, R, Z):
+    def map_to_RZ(self, R, Z):
         """Return distributions and densities at the given (R,Z) points."""
 
         R, Z = np.atleast_1d(R, Z)

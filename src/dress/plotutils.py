@@ -1,6 +1,6 @@
 """Tools for plotting spectra and distributions in the `dress` framework."""
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt; plt.ion()
 from matplotlib.colors import LogNorm
 import numpy as np
 import scipy.constants as const
