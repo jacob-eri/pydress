@@ -44,7 +44,8 @@ PARTICLE_DICT['be9'] = {'long name':'beryllium-9',
                         'excitation energy':0.0}
 PARTICLE_DICT['b9'] = {'long name':'boron-9',
                        'Z':5, 'A':9, 'u':masses.m9B,
-                       'name variations':('b9', '9b', 'boron-9')}
+                       'name variations':('b9', '9b', 'boron-9'),
+                       'excitation energy':0.0}
 PARTICLE_DICT['b10'] = {'long name':'boron-10',
                         'Z':5, 'A':10, 'u':masses.m10B,
                         'name variations':('b10', '10b', 'boron-10'),
