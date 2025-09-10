@@ -38,7 +38,7 @@ class TokaDistData:
 
         self.F = dist_data
         self.density = density_data
-        self.X = axes
+        self.axes = axes
 
 
     @property
@@ -47,7 +47,7 @@ class TokaDistData:
 
     @F.setter
     def F(self, dist_data):
-        dist_data = np.atleast_2d(dist_data)
+        dist_data = np.atleast_1d(dist_data)
         
         # Add one last point with only zeros
         dist_shape = list(dist_data.shape)
