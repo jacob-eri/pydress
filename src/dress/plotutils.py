@@ -137,7 +137,7 @@ def plot_emissivity(pos, spec, **kwargs):
         Label for the emissivity axis. Default is "events/m³/s".
 
     figure_name : str
-        Nama for the matplotlib figure. Default is " DRESS emissivity"."""
+        Name for the matplotlib figure. Default is "DRESS emissivity"."""
 
     if len(pos) != 2:
         raise ValueError('Emissivity plot currently only works with 2D profiles')
@@ -294,8 +294,8 @@ def _extract_dist(dist, i_spatial=1, n_samples=100_000, dist_type='energy-pitch'
 def explore_dist(dist, **kwargs):
     """Interactive distribution plots.
 
-    The particle density as a function of posistion is plotted.
-    By clocking in this figure the user can plot the velocity distribution
+    The particle density as a function of position is plotted.
+    By clicking in this figure the user can plot the velocity distribution
     at the different points.
 
     Keyword arguments are passed to plot_dist_point."""
@@ -329,4 +329,37 @@ def _density_click_fun(event, dist, **kwargs):
     i_click = np.argmin(distance)
 
     plot_dist_point(dist, i_spatial=i_click, **kwargs)
+    plt.draw()
+
+
+def explore_spec(pos, spec, *bin_edges, **kwargs):
+    """Interactive spectrum plots.
+
+    The emissivity as a function of position is plotted.
+    By clicking in this figure the user can plot the spectrum
+    at the different points.
+
+    Keyword arguments are passed to plot_spec."""
+
+    # Plot density
+    plot_emissivity(pos, spec, figure_name='emissivity')
+    ems_fig = plt.figure('emissivity')
+
+    click_fun = lambda event: _emissivity_click_fun(event, pos, spec, *bin_edges, **kwargs)
+    cid = ems_fig.canvas.mpl_connect('button_press_event', click_fun)    # connect to event manager
+
+    return ems_fig, click_fun
+
+def _emissivity_click_fun(event, pos, spec, *bin_edges, **kwargs):
+    """Determine what happens after clicking in the emissivity plot."""
+
+    # Find the spatial point closest to the click
+    x_click = event.xdata
+    y_click = event.ydata
+
+    distance = np.sqrt( (x_click - pos[0])**2 + (y_click - pos[1])**2 )
+
+    i_click = np.argmin(distance)
+
+    plot_spec(spec[i_click], *bin_edges, **kwargs, figure_name='spectrum at single point')
     plt.draw()
