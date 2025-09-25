@@ -189,7 +189,7 @@ def find_intersection(line, plane):
         return None
 
 
-def gen_viewing_cone(coll, x_range, y_range, z_range, dx, dy, dz, max_distance):
+def gen_viewing_cone(coll, x_range, y_range, z_range, dx, dy, dz, max_distance=None):
     """Generate viewing cone specification.
     
     Parameters
@@ -198,7 +198,7 @@ def gen_viewing_cone(coll, x_range, y_range, z_range, dx, dy, dz, max_distance):
     coll : viewingcone.Collimator instance
         Collimator specification
     
-    x_range, y_range, z_range : length-3 tuples
+    x_range, y_range, z_range : length-2 tuples
         Specification of the domain where the viewing cone is generated. 
         Each tuple should contain the info (x_min, x_max).
     
