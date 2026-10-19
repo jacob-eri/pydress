@@ -52,8 +52,10 @@ class DTNHe4Reaction(Reaction):
                 (1.0 + Eh*(B1_h + Eh*(B2_h + Eh*(B3_h + Eh*B4_h))))
         
         # Calculate the cross section
-        nonzero = E > 0
-        sigma[nonzero] = S[nonzero]/(E[nonzero]*np.exp(B_G/np.sqrt(E[nonzero])))     # mb
+        E_nonzero = E > 0.0
+        exponent = B_G/np.sqrt(E[E_nonzero])
+        sigma_nonzero = exponent < 600
+        sigma[sigma_nonzero] = S[sigma_nonzero]/(E[sigma_nonzero]*np.exp(exponent[sigma_nonzero]))     # mb
         
         return sigma * 1e-31     # m**2
 

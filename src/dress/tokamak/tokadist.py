@@ -5,7 +5,7 @@ two spatial coordinates (R,Z)."""
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, griddata
 
 
 class TokaDistData:
@@ -27,18 +27,18 @@ class TokaDistData:
             The distribution data. The length of the first dimension 
             should match the number of spatial points `NP`.
 
-        density : array of shape (NP,)
+        density_data : array of shape (NP,)
             The density at each spatial point.
 
         axes : tuple of arrays
-            The axis along each dimension (e.g. speed, pitch , energy,...).
+            The axis along each dimension (e.g. speed, pitch, energy,...).
             The spatial dimension is handeled separately (by the 
-            `spatial_index_fun` argument) and is NOT included here."""
+            `_get_spatial_index` method) and is NOT included here."""
 
 
         self.F = dist_data
         self.density = density_data
-        self.X = axes
+        self.axes = axes
 
 
     @property
@@ -47,7 +47,7 @@ class TokaDistData:
 
     @F.setter
     def F(self, dist_data):
-        dist_data = np.atleast_2d(dist_data)
+        dist_data = np.atleast_1d(dist_data)
         
         # Add one last point with only zeros
         dist_shape = list(dist_data.shape)
@@ -78,8 +78,7 @@ class TokaDistData:
         """Return the spatial index for the given (R,Z) values."""
         pass         # to be over-ridden by subclasses
 
-
-    def map_dist(self, R, Z):
+    def map_to_RZ(self, R, Z):
         """Return distributions and densities at the given (R,Z) points."""
 
         R, Z = np.atleast_1d(R, Z)
@@ -95,15 +94,27 @@ class TokaDistData:
 
 class RhoDistData(TokaDistData):
     """Class for holding distribution data where spatial variations 
-    depend on a flux surface label `rho` only."""
+    depend on a normalized flux surface label `rho` only."""
 
     def __init__(self, dist_data, density_data, axes, rho_axis, flux_map):
-        """Initialize dist which is a function of rho only.
+        """Initialize dist data that is a function of rho only.
 
         Parameters
         ----------
 
-        rho_axis : array
+        dist_data : array
+            The distribution data. The length of the first dimension 
+            should match the number of spatial points `NP`.
+
+        density_data : array of shape (NP,)
+            The density at each spatial point.
+
+        axes : tuple of arrays
+            The axis along each dimension (e.g. speed, pitch, energy,...).
+            The spatial dimension is provided separately (by the 
+            `rho_axis` argument) and is NOT included here.
+
+        rho_axis : array of shape (NP,)
             The rho axis used by the distribution.
 
         flux_map : dress.tokamak.utils.FluxSurfaceMap
@@ -138,3 +149,60 @@ class RhoDistData(TokaDistData):
         ind_RZ = self.ind_fun(rho_RZ)
 
         return ind_RZ.astype('int')
+
+
+class RZDistData(TokaDistData):
+    """Class for holding distribution data given on a (possibly irregular) RZ grid."""
+
+    def __init__(self, dist_data, density_data, axes, R_vals, Z_vals, flux_map):
+        """Initialize dist data on an RZ grid.
+
+        Parameters
+        ----------
+
+        dist_data : array
+            The distribution data. The length of the first dimension 
+            should match the number of spatial points `NP`.
+
+        density_data : array of shape (NP,)
+            The density at each spatial point.
+
+        axes : tuple of arrays
+            The axis along each dimension (e.g. speed, pitch, energy,...).
+            The spatial dimension is provided separately (by the 
+            `rho_axis` argument) and is NOT included here.
+
+        R_vals : array of shape (NP,)
+            The R values for which the distribution is given.
+
+        Z_vals : array of shape (NP,)
+            The Z values for which the distribution is given.
+        
+        flux_map : dress.tokamak.utils.FluxSurfaceMap
+            Mapping between (R,Z) and a normalized flux label rho.""" 
+        
+        super().__init__(dist_data, density_data, axes)
+        self.R = R_vals
+        self.Z = Z_vals
+
+        self.flux_map = flux_map
+
+        # Density data was padded with one extra zero, which should not be included 
+        # in the list of spatial indices
+        self.spatial_index = np.arange(len(self.density)-1)
+
+    def _get_spatial_index(self, R, Z):
+        R = np.atleast_1d(R)
+        Z = np.atleast_1d(Z)
+
+        # Map each RZ value to the closest spatial grid point.
+        i_spatial = griddata((self.R, self.Z), self.spatial_index, (R,Z), method='nearest').astype('int64')
+
+        # Points outside the plasma should not get a valid index.
+        # This is accomplished by adding 1 to the last spatial index value, since
+        # self.F and self.density were padded with an additional zero when initiated.
+        X = self.flux_map.get_rho(R, Z)
+        i_spatial[X>1.0] = self.spatial_index[-1] + 1
+
+        return i_spatial
+        

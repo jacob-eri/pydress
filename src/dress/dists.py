@@ -5,6 +5,7 @@ within the `dress` framework."""
 import numpy as np
 from scipy.constants import c
 from scipy.interpolate import interp1d
+import warnings
 
 from dress import relkin
 from dress import sampler
@@ -80,6 +81,10 @@ class VelocityDistribution:
 
         n = int(n)
         v = self._sample(n, index=index)
+
+        invalid = ~np.isfinite(v)
+        if np.any(invalid):
+            raise ValueError(f'NaN/Inf in sampled velocity at spatial index {index}')
         
         if self.v_collective is not None:
             v_coll = vec.make_vector(self.v_collective[:,index])
@@ -500,6 +505,16 @@ class TabulatedEnergyPitchDistribution(EnergyPitchDistribution):
 
         E = sample[0]
         pitch = sample[1]
+
+        neg_E = E < 0.0
+        if np.any(neg_E):
+            warnings.warn(f'Sampled kinetic energy is negative ({E[neg_E]} keV).\nReplacing with zero and moving on', RuntimeWarning)
+            E[neg_E] = 0.0
+
+        invalid_pitch = np.abs(pitch) > 1.0
+        if np.any(invalid_pitch):
+            warnings.warn(f'Abs of sampled pitch is > 1 ({pitch[invalid_pitch]}).\nAdjusting to +/-1 and moving on.', RuntimeWarning)
+            pitch[invalid_pitch] = np.sign(pitch[invalid_pitch])
 
         return E, pitch
 

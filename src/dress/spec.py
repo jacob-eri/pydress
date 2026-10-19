@@ -58,6 +58,8 @@ class SpectrumCalculator:
         self.reaction = reaction
         self.weights = None
         self.ref_dir = ref_dir
+        self.which_product = 1
+        self.prod_mult = 1
 
         # 4*pi emission by default
         self.u = None
@@ -156,7 +158,7 @@ class SpectrumCalculator:
             self._ref_dir = u
     
 
-    def __call__(self, bins=None, bin_width=25.0, normalize=False, which_product=1):
+    def __call__(self, bins=None, bin_width=25.0, normalize=False):
         """
         Compute reactant spectrum. The units of the spectrum depends on the 
         units of the 'weights' attribute. The 'normalize' keyword
@@ -189,7 +191,7 @@ class SpectrumCalculator:
                 u = np.array(u).reshape(3,1)   # same emission direction for all particles            
 
         # Setup for computing the spectrum of the requested product
-        m, mr, mr2 = self._get_product_masses(which_product)
+        m, mr, mr2 = self._get_product_masses()
 
         # Compute product four-momenta
         if self.product_3 is not None:             
@@ -203,24 +205,39 @@ class SpectrumCalculator:
         # Make attributes with reactivity for possible later use
         self.sigmav = sigmav
 
+        # Check multiplicity of the reaction product and modify weights accordingly,
+        prod = self._get_product()
+        self.prod_mult = sum([p == prod for p in self.reaction.products])
+
         # Bin all events
-        weights_tot = self.weights * sigmav
+        weights_tot = self.weights * sigmav * self.prod_mult
         
         result = self._make_spec_hist(P, m, bins, bin_width, weights_tot, normalize)
         
         return result
 
-    def _get_product_masses(self, which_product):
+    def _get_product(self):
+        """Return product with given index."""
+        if self.which_product == 1:
+            return self.product_1
+        elif self.which_product == 2:
+            return self.product_2
+        elif self.which_product == 3:
+            return self.product_3
+        else:
+            raise ValueError('Invalid product choice')
+
+    def _get_product_masses(self):
         """Return the masses to be used in the calls to relscatt."""
-        if which_product == 1:
+        if self.which_product == 1:
             m = self.m1
             mr = self.m2
             mr2 = self.m3
-        elif which_product == 2:
+        elif self.which_product == 2:
             m = self.m2
             mr = self.m1
             mr2 = self.m3
-        elif which_product == 3:
+        elif self.which_product == 3:
             if self.m3 is not None:
                 m = self.m3
                 mr = self.m1

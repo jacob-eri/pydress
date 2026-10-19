@@ -46,9 +46,11 @@ class DDNHe3Reaction(Reaction):
         S = A1+E*(A2+E*(A3+E*(A4+E*A5)))
 
         # Calculate the cross section
-        nonzero = E > 0
-        sigma[nonzero] = S[nonzero]/(E[nonzero]*np.exp(B_G/np.sqrt(E[nonzero])))     # mb
-        
+        E_nonzero = E > 0.0
+        exponent = B_G/np.sqrt(E[E_nonzero])
+        sigma_nonzero = exponent < 600
+        sigma[sigma_nonzero] = S[sigma_nonzero]/(E[sigma_nonzero]*np.exp(exponent[sigma_nonzero]))     # mb
+
         return sigma * 1e-31     # m**2
 
 

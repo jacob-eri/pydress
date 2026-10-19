@@ -1,6 +1,6 @@
 """Tools for plotting spectra and distributions in the `dress` framework."""
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt; plt.ion()
 from matplotlib.colors import LogNorm
 import numpy as np
 import scipy.constants as const
@@ -34,6 +34,13 @@ def plot_spec(spec, *bin_edges, **kwargs):
 
     *** Possible keyword arguments: ***
 
+    dV : array
+        Volume elements, if spec is spatially resolved (e.g. produced with 
+        `dress.utils.calc_vols` using `integrate=False`)
+
+    dynamic_range : int
+        Number of orders of magnitude spanned by the spectrum axis. Default is 5.
+
     E_label : str
         Label for the energy axis. Default is "E".
 
@@ -46,12 +53,15 @@ def plot_spec(spec, *bin_edges, **kwargs):
     label : str
         Label for the legend. Default is None (no legend will be drawn).
 
+    figure_name : str
+        Name for the matplotlib figure. Default is "DRESS energy(-pitch) spectrum".
+
     E_unit : str
         Which energy units to use. Default is "MeV".
     
     convert_E : bool
         Whether to convert the energy axis according to the value of `E_unit`, under 
-        the assumption that the input energy axis is in keV (the default units of dress). 
+        the assumption that the input energy axis is in keV (the default units of pydress). 
         Default is True.
 
     erase : bool
@@ -59,6 +69,8 @@ def plot_spec(spec, *bin_edges, **kwargs):
     """
 
     # Get keyword arguments
+    dV = kwargs.get('dV', None)
+    dyn_range = kwargs.get('dynamic_range', 5)
     E_label = kwargs.get('E_label', 'E')
     A_label = kwargs.get('A_label', 'cos(θ)')
     spec_label = kwargs.get('spec_label', 'events/bin/s')
@@ -66,6 +78,15 @@ def plot_spec(spec, *bin_edges, **kwargs):
     E_unit = kwargs.get('E_unit', 'MeV')
     convert_E = kwargs.get('convert_E', True)
     erase = kwargs.get('erase', True)
+
+    # Integrate over volume, if necessary
+    if dV is not None:
+        integrated_spec = 0.0
+        
+        for i in range(len(dV)):
+            integrated_spec = integrated_spec + spec[i]*dV[i]
+            
+        spec = integrated_spec
 
     # Convert energy scale, if necessary
     E_bins = bin_edges[0]
@@ -76,55 +97,60 @@ def plot_spec(spec, *bin_edges, **kwargs):
     E_label += f' ({E_unit})'
 
     if len(bin_edges) == 1:
-        plt.figure('DRESS energy spectrum')
+        figure_name = kwargs.get('figure_name', 'DRESS energy spectrum')
+        plt.figure(figure_name)
         if erase: plt.clf()
         plt.step(E_bins[1:], spec, where='pre', label=label)
         plt.xlabel(E_label)
         plt.ylabel(spec_label)
+        plt.ylim(bottom=spec.max()/10**dyn_range)
         plt.legend()
         
     if len(bin_edges) == 2:
-        plt.figure('DRESS energy-pitch spectrum')
+        figure_name = kwargs.get('figure_name', 'DRESS energy-pitch spectrum')
+        plt.figure(figure_name)
         if erase: plt.clf()
         A_bins = bin_edges[1]
         plt.pcolor(E_bins, A_bins, spec.T)
         plt.xlabel(E_label)
         plt.ylabel(A_label)
+        plt.clim(vmin=spec.max()/10**dyn_range)
         plt.colorbar(label=spec_label)
         
     
-def plot_emissivity(vols, spec, *bin_edges, **kwargs):
+def plot_emissivity(pos, spec, **kwargs):
     """Plot 2D spatial emissivity from given volume elements.
 
     Parameters
     ----------
-    vols : list of instances of dress.volspec.VolumeElement
-        The volume elements for which the spectra has been calculated.
+    pos : tuple
+        The position coordinates (e.g. (R,Z)) where the spectrum is given.
     
     spec : spectrum array
         This should be a spectrum of the kind calculated with dress.volspec.calc_vols, 
         using the `integrate=False` option.
 
-    bin_edges : arrays
-        Energy bins and (optionally) pitch bins for the product particle.
-
     x_label, y_label : str
         Label for the spatial x and y- axes.
 
     ems_label : str
-        Label for the emissivity axis. Default is "events/m³/s"."""
+        Label for the emissivity axis. Default is "events/m³/s".
 
-    if len(vols.pos) != 2:
+    figure_name : str
+        Name for the matplotlib figure. Default is "DRESS emissivity"."""
+
+    if len(pos) != 2:
         raise ValueError('Emissivity plot currently only works with 2D profiles')
 
     # Keyword arguments
     x_label = kwargs.get('x_label', 'x')
     y_label = kwargs.get('y_label', 'y')
     ems_label = kwargs.get('ems_label', 'events/m³/s')
+    figure_name = kwargs.get('figure_name', 'DRESS emissivity')
 
     # Extract data to plot
-    x = np.atleast_1d(vols.pos[0])
-    y = np.atleast_1d(vols.pos[1])
+    x = np.atleast_1d(pos[0])
+    y = np.atleast_1d(pos[1])
 
     if spec.ndim == 2:
         sum_axis = 1
@@ -133,7 +159,7 @@ def plot_emissivity(vols, spec, *bin_edges, **kwargs):
 
     ems = spec.sum(axis=sum_axis)
 
-    plt.figure('DRESS emissivity')
+    plt.figure(figure_name)
     plt.clf()
     plt.tripcolor(x, y, ems)
     plt.xlabel(x_label)
@@ -189,7 +215,7 @@ def plot_dist_point(dist, i_spatial=0, n_samples=100_000, dist_type='energy-pitc
         plt.pcolor(d[1], d[2], d[0].T, norm=norm)
         plt.ylim(-1,1)
         plt.xlabel('Energy (keV)')
-        plt.ylabel('v$_{\parallel}$/v (m/s)')
+        plt.ylabel('v$_{\\parallel}$/v (m/s)')
         plt.colorbar()
 
     elif dist_type == 'energy':
@@ -204,8 +230,8 @@ def plot_dist_point(dist, i_spatial=0, n_samples=100_000, dist_type='energy-pitc
         plt.figure('vpar-vperp dist')
         plt.clf()
         plt.pcolor(d[1], d[2], d[0].T, norm=norm)
-        plt.xlabel('v$_{\parallel}$ (m/s)')
-        plt.ylabel('v$_{\perp}$ (m/s)')
+        plt.xlabel('v$_{\\parallel}$ (m/s)')
+        plt.ylabel('v$_{\\perp}$ (m/s)')
         plt.ylim(bottom=0)
         plt.axis('equal')
         plt.colorbar()
@@ -268,8 +294,8 @@ def _extract_dist(dist, i_spatial=1, n_samples=100_000, dist_type='energy-pitch'
 def explore_dist(dist, **kwargs):
     """Interactive distribution plots.
 
-    The particle density as a function of posistion is plotted.
-    By clocking in this figure the user can plot the velocity distribution
+    The particle density as a function of position is plotted.
+    By clicking in this figure the user can plot the velocity distribution
     at the different points.
 
     Keyword arguments are passed to plot_dist_point."""
@@ -303,4 +329,37 @@ def _density_click_fun(event, dist, **kwargs):
     i_click = np.argmin(distance)
 
     plot_dist_point(dist, i_spatial=i_click, **kwargs)
+    plt.draw()
+
+
+def explore_spec(pos, spec, *bin_edges, **kwargs):
+    """Interactive spectrum plots.
+
+    The emissivity as a function of position is plotted.
+    By clicking in this figure the user can plot the spectrum
+    at the different points.
+
+    Keyword arguments are passed to plot_spec."""
+
+    # Plot density
+    plot_emissivity(pos, spec, figure_name='emissivity')
+    ems_fig = plt.figure('emissivity')
+
+    click_fun = lambda event: _emissivity_click_fun(event, pos, spec, *bin_edges, **kwargs)
+    cid = ems_fig.canvas.mpl_connect('button_press_event', click_fun)    # connect to event manager
+
+    return ems_fig, click_fun
+
+def _emissivity_click_fun(event, pos, spec, *bin_edges, **kwargs):
+    """Determine what happens after clicking in the emissivity plot."""
+
+    # Find the spatial point closest to the click
+    x_click = event.xdata
+    y_click = event.ydata
+
+    distance = np.sqrt( (x_click - pos[0])**2 + (y_click - pos[1])**2 )
+
+    i_click = np.argmin(distance)
+
+    plot_spec(spec[i_click], *bin_edges, **kwargs, figure_name='spectrum at single point')
     plt.draw()

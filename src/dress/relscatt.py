@@ -30,6 +30,10 @@ class ReactantData:
         self.Ptot = Pa + Pb
         self.Mtot = np.sqrt(relkin.mult_four_vectors(self.Ptot, self.Ptot))      # total invariant mass
 
+        invalid = ~np.isfinite(self.Mtot)
+        if np.any(invalid):
+            raise ValueError('Nan/Inf in invariant mass')
+
         self.Tcm = self.Mtot - ma - mb    # kinetic energy in the CMS
         
         # Gamma and beta factors for the CMS
@@ -153,11 +157,11 @@ def invariant_to_momentum(inv, reactant_data, m1, u1):
     p1[valid_minus] = p1_minus[valid_minus]
     p1[valid_plus] = p1_plus[valid_plus]
 
-    has_two_solutions = valid_plus & valid_minus
-    if np.any(has_two_solutions):
-        n = np.sum(has_two_solutions)
-        ntot = len(has_two_solutions)
-        print(f'NOTE: two kinematically allowed solutions found in {n}/{ntot} cases. Using the one with highest energy.')
+    # has_two_solutions = valid_plus & valid_minus
+    # if np.any(has_two_solutions):
+    #     n = np.sum(has_two_solutions)
+    #     ntot = len(has_two_solutions)
+    #     print(f'NOTE: two kinematically allowed solutions found in {n}/{ntot} cases. Using the one with highest energy.')
 
     return p1
 

@@ -151,7 +151,7 @@ class FluxSurfaceQuantity:
         self.eval_from_rho = interp1d(rho, val, kind='linear', fill_value=(val[0],0), bounds_error=False)
         
 
-    def eval_from_RZ(self, R, Z):
+    def map_to_RZ(self, R, Z):
         
         rho = self.flux_surface_map.get_rho(R, Z)
         val = self.eval_from_rho(rho)
@@ -180,7 +180,7 @@ def get_toroidal_velocity(angular_freq, R, Z, toroidal_unit_vector=[0,1,0]):
         Toroidal velocities at each of the requested points."""
 
     R, Z = np.atleast_1d(R, Z)
-    angf = angular_freq.eval_from_RZ(R, Z)
+    angf = angular_freq.map_to_RZ(R, Z)
     
     toroidal_speed = angf*R     # m/s
     

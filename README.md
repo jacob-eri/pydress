@@ -2,13 +2,6 @@
 Directional Relativistic Spectrum Simulator (DRESS), mainly developed for fusion reactions.
 
 ## Installation
-The package is installed by the following sequence of steps:
-
-- Easier method: Install from PyPI 
-
-```
-pip install pydress
-```
 
 - Clone git repository and pip install local copy
 
@@ -16,6 +9,12 @@ pip install pydress
 git clone https://github.com/jacob-eri/pydress
 cd pydress
 pip install -e .
+```
+
+- An older version of the package (v1.0) can also be installed from PyPI: 
+
+```
+pip install pydress
 ```
 
 ## Documentation

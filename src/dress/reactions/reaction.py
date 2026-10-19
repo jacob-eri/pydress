@@ -4,7 +4,7 @@ from dress.reactions.particle import Particle
 class Reaction:
     """Base class for representing nuclear reactions with two or three particles in the final state."""
 
-    __slots__ = ('name', 'a', 'b', 'p1', 'p2', 'p3')
+    __slots__ = ('name', 'a', 'b', 'p1', 'p2', 'p3', 'products')
 
     def __init__(self, a, b, p1, p2, p3):
         
@@ -17,10 +17,12 @@ class Reaction:
         # Products
         self.p1 = Particle(p1)
         self.p2 = Particle(p2)
+        self.products = [self.p1, self.p2]
         if p3 is None:
             self.p3 = None
         else:
             self.p3 = Particle(p3)
+            self.products.append(self.p3)
 
     def __repr__(self):
         return f'Reaction: {self.formula}'
